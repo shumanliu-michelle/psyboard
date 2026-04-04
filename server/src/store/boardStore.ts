@@ -92,7 +92,7 @@ export function createTask(title: string, columnId: string, description?: string
   return task
 }
 
-export function updateTask(id: string, updates: Partial<Pick<Task, 'title' | 'description' | 'columnId' | 'order'>>): Task {
+export function updateTask(id: string, updates: Partial<Pick<Task, 'title' | 'description' | 'columnId' | 'order' | 'assignee'>>): Task {
   const board = readBoard()
   const task = board.tasks.find(t => t.id === id)
   if (!task) {
@@ -106,6 +106,7 @@ export function updateTask(id: string, updates: Partial<Pick<Task, 'title' | 'de
   if (updates.title !== undefined) task.title = updates.title
   if (updates.description !== undefined) task.description = updates.description
   if (updates.order !== undefined) task.order = updates.order
+  if (updates.assignee !== undefined) task.assignee = updates.assignee
   task.updatedAt = new Date().toISOString()
   writeBoard(board)
   return task

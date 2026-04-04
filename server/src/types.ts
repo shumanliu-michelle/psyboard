@@ -15,6 +15,7 @@ export type Task = {
   order: number
   createdAt: string
   updatedAt: string
+  assignee?: 'SL' | 'KL'
 }
 
 export type Board = {
@@ -24,4 +25,4 @@ export type Board = {
 
 export type CreateColumnInput = { title: string }
 export type CreateTaskInput = { title: string; columnId: string; description?: string }
-export type UpdateTaskInput = Partial<Pick<Task, 'title' | 'description' | 'columnId' | 'order'>>
+export type UpdateTaskInput = Partial<Pick<Task, 'title' | 'description' | 'columnId' | 'order' | 'assignee'>>
