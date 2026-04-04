@@ -416,3 +416,8 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# psyboard — generated data
+server/data/board.json
+server/data/*.tmp
+client/dist/

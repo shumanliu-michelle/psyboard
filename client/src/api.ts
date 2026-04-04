@@ -1,0 +1,35 @@
+import type { Board, Column, CreateColumnInput, CreateTaskInput, UpdateTaskInput } from './types'
+
+const BASE = '/api'
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error((body as { error: string }).error || `HTTP ${res.status}`)
+  }
+  if (res.status === 204) return undefined as T
+  return res.json() as Promise<T>
+}
+
+export const api = {
+  getBoard: () => request<Board>('/board'),
+
+  createColumn: (data: CreateColumnInput) =>
+    request<Column>('/columns', { method: 'POST', body: JSON.stringify(data) }),
+
+  deleteColumn: (id: string) =>
+    request<void>(`/columns/${id}`, { method: 'DELETE' }),
+
+  createTask: (data: CreateTaskInput) =>
+    request<import('./types').Task>('/tasks', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateTask: (id: string, data: UpdateTaskInput) =>
+    request<import('./types').Task>(`/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  deleteTask: (id: string) =>
+    request<void>(`/tasks/${id}`, { method: 'DELETE' }),
+}
