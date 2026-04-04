@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { randomUUID } from 'crypto'
-import type { Board, Column, Task } from '../types.js'
+import type { Board, Column, Task, UpdateTaskInput } from '../types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, '..', '..', 'data')
@@ -92,7 +92,7 @@ export function createTask(title: string, columnId: string, description?: string
   return task
 }
 
-export function updateTask(id: string, updates: Partial<Pick<Task, 'title' | 'description' | 'columnId' | 'order' | 'assignee'>>): Task {
+export function updateTask(id: string, updates: UpdateTaskInput): Task {
   const board = readBoard()
   const task = board.tasks.find(t => t.id === id)
   if (!task) {
@@ -106,7 +106,7 @@ export function updateTask(id: string, updates: Partial<Pick<Task, 'title' | 'de
   if (updates.title !== undefined) task.title = updates.title
   if (updates.description !== undefined) task.description = updates.description
   if (updates.order !== undefined) task.order = updates.order
-  if (updates.assignee !== undefined) task.assignee = updates.assignee
+  if (updates.assignee !== undefined) task.assignee = updates.assignee === null ? undefined : updates.assignee
   task.updatedAt = new Date().toISOString()
   writeBoard(board)
   return task

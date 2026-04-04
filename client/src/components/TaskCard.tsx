@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Task } from '../types'
@@ -33,6 +33,19 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(task.title)
   const [showAssign, setShowAssign] = useState(false)
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  // Close popover on click outside
+  useEffect(() => {
+    if (!showAssign) return
+    const handler = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowAssign(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showAssign])
 
   const {
     attributes,
@@ -111,7 +124,7 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
         <button
           onClick={e => { e.stopPropagation(); setShowAssign(!showAssign) }}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px', display: 'flex' }}
-          title="Assign"
+          aria-label="Assign"
         >
           <PersonIcon />
         </button>
@@ -119,7 +132,7 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
         <button
           onClick={e => { e.stopPropagation(); setEditing(true) }}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px', display: 'flex' }}
-          title="Edit"
+          aria-label="Edit"
         >
           <PencilIcon />
         </button>
@@ -127,7 +140,7 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
         <button
           onClick={e => { e.stopPropagation(); handleDelete() }}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px', display: 'flex' }}
-          title="Delete"
+          aria-label="Delete"
         >
           <CrossIcon />
         </button>
@@ -150,7 +163,7 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
         </div>
       )}
       {showAssign && (
-        <div style={{
+        <div ref={popoverRef} style={{
           position: 'absolute',
           top: 28,
           right: 8,
@@ -195,7 +208,7 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
             onClick={async e => {
               e.stopPropagation()
               try {
-                await api.updateTask(task.id, { assignee: null as any })
+                await api.updateTask(task.id, { assignee: null })
                 onUpdated()
                 setShowAssign(false)
               } catch (err) {

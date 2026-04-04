@@ -25,4 +25,10 @@ export type Board = {
 
 export type CreateColumnInput = { title: string }
 export type CreateTaskInput = { title: string; columnId: string; description?: string }
-export type UpdateTaskInput = Partial<Pick<Task, 'title' | 'description' | 'columnId' | 'order' | 'assignee'>>
+export type UpdateTaskInput = {
+  title?: string
+  description?: string
+  columnId?: string
+  order?: number
+  assignee?: 'SL' | 'KL' | null
+}
