@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Task } from '../types'
+import { DONE_COLUMN_ID } from '../types'
 import { api } from '../api'
 
 interface TaskCardProps {
@@ -62,6 +63,8 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
     transform: CSS.Transform.toString(transform),
     transition,
   }
+
+  const isCompleted = task.columnId === DONE_COLUMN_ID
 
   async function handleDelete() {
     try {
@@ -173,24 +176,28 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
           }}>
             {menuMode === 'main' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <button
-                  onClick={e => { e.stopPropagation(); setMenuMode('assign') }}
-                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-                >
-                  Assign
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); setMenuMode('priority') }}
-                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-                >
-                  Priority
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
-                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-                >
-                  Edit
-                </button>
+                {!isCompleted && (
+                  <>
+                    <button
+                      onClick={e => { e.stopPropagation(); setMenuMode('assign') }}
+                      style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                    >
+                      Assign
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); setMenuMode('priority') }}
+                      style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                    >
+                      Priority
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
+                      style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                    >
+                      Edit
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={e => { e.stopPropagation(); setShowMenu(false); handleDelete() }}
                   style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
