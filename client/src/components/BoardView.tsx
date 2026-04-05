@@ -7,7 +7,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  rectIntersection,
+  closestCenter,
 } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Board, Column, Task } from '../types'
@@ -97,7 +97,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
 
   const columnSensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 15 },
+      activationConstraint: { distance: 5 },
     })
   )
 
@@ -205,13 +205,15 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
 
     if (!over || active.id === over.id) return
 
-    const oldIndex = board.columns.findIndex(c => c.id === active.id)
-    const newIndex = board.columns.findIndex(c => c.id === over.id)
+    // Sort columns by position to match how SortableContext renders them
+    const sortedColumns = board.columns.slice().sort((a, b) => a.position - b.position)
+    const oldIndex = sortedColumns.findIndex(c => c.id === active.id)
+    const newIndex = sortedColumns.findIndex(c => c.id === over.id)
 
     if (oldIndex === -1 || newIndex === -1) return
 
-    // Build new ordered columnIds array
-    const columnIds = board.columns.map(c => c.id)
+    // Build new ordered columnIds array from sorted order
+    const columnIds = sortedColumns.map(c => c.id)
     columnIds.splice(oldIndex, 1)
     columnIds.splice(newIndex, 0, active.id as string)
 
@@ -250,7 +252,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     <div className="board">
       <DndContext
         sensors={columnSensors}
-        collisionDetection={rectIntersection}
+        collisionDetection={closestCenter}
         onDragStart={handleColumnDragStart}
         onDragEnd={handleColumnDragEnd}
       >
