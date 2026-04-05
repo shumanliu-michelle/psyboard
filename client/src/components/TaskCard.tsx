@@ -246,7 +246,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
       {task.assignee && (
         <div style={{
           position: 'absolute',
-          top: 17,
+          top: 10,
           right: 36,
         }}>
           <span style={{
