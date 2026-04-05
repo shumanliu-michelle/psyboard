@@ -7,8 +7,10 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  closestCenter,
 } from '@dnd-kit/core'
-import type { Board, Task } from '../types'
+import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
+import type { Board, Column, Task } from '../types'
 import { TODAY_COLUMN_ID, DONE_COLUMN_ID } from '../types'
 import { ColumnCard } from './ColumnCard'
 import { AddColumnForm } from './AddColumnForm'
@@ -61,6 +63,7 @@ interface BoardViewProps {
 
 export function BoardView({ board, onRefresh }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [activeColumn, setActiveColumn] = useState<Column | null>(null)
   const [showAddColumn, setShowAddColumn] = useState(false)
   const [blockedDrag, setBlockedDrag] = useState<{ task: Task; targetColumnId: string } | null>(null)
   const [blockedDragDoDate, setBlockedDragDoDate] = useState('')
@@ -87,6 +90,12 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
   }
 
   const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    })
+  )
+
+  const columnSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
     })
@@ -183,6 +192,32 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     }
   }
 
+  function handleColumnDragStart(event: DragStartEvent) {
+    document.body.style.overflow = 'hidden'
+    const column = board.columns.find(c => c.id === event.active.id)
+    if (column) setActiveColumn(column)
+  }
+
+  function handleColumnDragEnd(event: DragEndEvent) {
+    document.body.style.overflow = 'auto'
+    const { active, over } = event
+    setActiveColumn(null)
+
+    if (!over || active.id === over.id) return
+
+    const oldIndex = board.columns.findIndex(c => c.id === active.id)
+    const newIndex = board.columns.findIndex(c => c.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    // Build new ordered columnIds array
+    const columnIds = board.columns.map(c => c.id)
+    columnIds.splice(oldIndex, 1)
+    columnIds.splice(newIndex, 0, active.id as string)
+
+    api.reorderColumns(columnIds).then(onRefresh).catch(console.error)
+  }
+
   function validateBlockedDates(doDate: string, dueDate: string) {
     if (doDate && dueDate && dueDate < doDate) {
       setBlockedDragDateError('Due date cannot be earlier than do date.')
@@ -213,11 +248,15 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
   return (
     <>
     <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      sensors={columnSensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleColumnDragStart}
+      onDragEnd={handleColumnDragEnd}
     >
-      <div className="board">
+      <SortableContext
+        items={board.columns.slice().sort((a, b) => a.position - b.position).map(c => c.id)}
+        strategy={horizontalListSortingStrategy}
+      >
         {board.columns
           .slice()
           .sort((a, b) => a.position - b.position)
@@ -241,21 +280,46 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
               />
             )
           })}
+      </SortableContext>
 
-        <div className="add-column">
-          {showAddColumn ? (
-            <AddColumnForm
-              onAdded={() => { setShowAddColumn(false); onRefresh() }}
-              onCancel={() => setShowAddColumn(false)}
-            />
-          ) : (
-            <button className="add-column-btn" onClick={() => setShowAddColumn(true)}>
-              + Add column
-            </button>
-          )}
-        </div>
-      </div>
+      <DragOverlay>
+        {activeColumn ? (
+          <div className="column" style={{
+            opacity: 0.9,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            touchAction: 'none',
+            minWidth: 240,
+          }}>
+            <div className="column-header">
+              <h3>{activeColumn.title}</h3>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
 
+    <div className="add-column">
+      {showAddColumn ? (
+        <AddColumnForm
+          onAdded={() => { setShowAddColumn(false); onRefresh() }}
+          onCancel={() => setShowAddColumn(false)}
+        />
+      ) : (
+        <button className="add-column-btn" onClick={() => setShowAddColumn(true)}>
+          + Add column
+        </button>
+      )}
+    </div>
+
+    {/* Task DndContext - separate from column DnD */}
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      {/* Task drag overlay - moved outside DndContext children */}
       <DragOverlay>
         {activeTask ? (
           <div className="task-card" data-dnd-drag-overlay style={{ opacity: 0.9, boxShadow: '0 4px 12px rgba(0,0,0,0.2)', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}>
