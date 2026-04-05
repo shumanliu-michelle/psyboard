@@ -41,8 +41,6 @@ export function readBoard(): Board {
     const raw = fs.readFileSync(BOARD_FILE, 'utf-8')
     const board = JSON.parse(raw) as Board
     const healed = migrateAndHeal(board)
-    // Reconciliation: promote any date-eligible tasks from Backlog to Today
-    reconcileBoard(healed, getTodayString())
     return healed
   } catch {
     const board = DEFAULT_BOARD
@@ -93,6 +91,10 @@ function migrateAndHeal(board: Board): Board {
     columns: allColumns,
     tasks: board.tasks ?? [],
   }
+
+  // Reconciliation: promote any date-eligible tasks from Backlog to Today
+  reconcileBoard(healedBoard, getTodayString())
+
   writeBoard(healedBoard)
   return healedBoard
 }
@@ -226,11 +228,11 @@ export function createTask(
     updatedAt: now,
   }
   board.tasks.push(task)
-  writeBoard(board)
 
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
   reconcileBoard(board, getTodayString())
 
+  writeBoard(board)
   return task
 }
 
@@ -281,11 +283,10 @@ export function updateTask(id: string, updates: {
   if (updates.manualOrder !== undefined) task.manualOrder = updates.manualOrder
   task.updatedAt = new Date().toISOString()
 
-  writeBoard(board)
-
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
   reconcileBoard(board, getTodayString())
 
+  writeBoard(board)
   return task
 }
 

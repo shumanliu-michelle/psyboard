@@ -34,6 +34,8 @@ export function reconcileBoard(board: Board, today: string): Task | null {
   for (const task of board.tasks) {
     const promoted = reconcileTask(task, today)
     if (promoted) {
+      // Update the task in place
+      Object.assign(task, promoted)
       return promoted
     }
   }
