@@ -287,7 +287,7 @@ export function TaskDrawer({
           <div className="task-drawer-danger-zone">
             {task.columnId !== DONE_COLUMN_ID && (
               <button
-                className="btn-danger-full"
+                className="btn-danger-full btn-mark-done"
                 onClick={handleMarkDone}
                 disabled={saving}
               >
@@ -295,7 +295,7 @@ export function TaskDrawer({
               </button>
             )}
             <button
-              className="btn-danger-full btn-danger-outline"
+              className="btn-danger-full btn-delete"
               onClick={handleDelete}
               disabled={saving}
             >

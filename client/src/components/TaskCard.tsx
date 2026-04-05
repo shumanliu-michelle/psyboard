@@ -94,7 +94,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
     }
   }
 
-  const priorityColor = task.priority === 'high' ? '#dc2626' : task.priority === 'medium' ? '#d97706' : '#059669'
+  const priorityColor = task.priority === 'high' ? '#dc2626' : task.priority === 'medium' ? '#f59e0b' : '#059669'
 
   return (
     <div
