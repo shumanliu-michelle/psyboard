@@ -4,6 +4,17 @@ import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
 import type { Column, Task } from '../types'
 import { TaskCard, KebabIcon } from './TaskCard'
+
+const GripIcon = () => (
+  <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" style={{ flexShrink: 0 }}>
+    <circle cx="2" cy="2.5" r="1.5" />
+    <circle cx="8" cy="2.5" r="1.5" />
+    <circle cx="2" cy="8" r="1.5" />
+    <circle cx="8" cy="8" r="1.5" />
+    <circle cx="2" cy="13.5" r="1.5" />
+    <circle cx="8" cy="13.5" r="1.5" />
+  </svg>
+)
 import { QuickAddForm } from './QuickAddForm'
 import { api } from '../api'
 
@@ -55,7 +66,10 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
       }}
     >
       {column.kind === 'custom' ? (
-      <div className="column-header" ref={menuRef} style={{ position: 'relative' }} {...columnAttributes} {...columnListeners}>
+      <div className="column-header" ref={menuRef} style={{ position: 'relative' }}>
+        <div {...columnAttributes} {...columnListeners} style={{ cursor: 'grab', touchAction: 'none', display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+          <GripIcon />
+        </div>
         {renaming ? (
           <input
             autoFocus
@@ -80,7 +94,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
             }}
           />
         ) : (
-          <h3>{column.title}</h3>
+          <h3 style={{ flex: 1 }}>{column.title}</h3>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="task-count">{tasks.length}</span>
@@ -146,8 +160,11 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         )}
       </div>
     ) : (
-      <div className="column-header" {...columnAttributes} {...columnListeners}>
-        <h3>{column.title}</h3>
+      <div className="column-header">
+        <div {...columnAttributes} {...columnListeners} style={{ cursor: 'grab', touchAction: 'none', display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+          <GripIcon />
+        </div>
+        <h3 style={{ flex: 1 }}>{column.title}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="task-count">{tasks.length}</span>
         </div>
