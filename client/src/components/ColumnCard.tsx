@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
 import type { Column, Task } from '../types'
 import { TaskCard, KebabIcon } from './TaskCard'
@@ -20,7 +21,15 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
   const [confirmDelete, setConfirmDelete] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const { setNodeRef, isOver } = useDroppable({ id: column.id })
+  const {
+  attributes: columnAttributes,
+  listeners: columnListeners,
+  transform: columnTransform,
+  transition: columnTransition,
+  isDragging: isColumnDragging,
+} = useSortable({ id: column.id, data: { type: 'column' } })
+
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({ id: column.id })
 
   useEffect(() => {
     if (!showMenu) return
@@ -36,10 +45,15 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
   return (
     <div
       className="column"
-      style={{ background: isOver ? '#dde' : undefined }}
+      style={{
+        background: isOver ? '#dde' : undefined,
+        transform: CSS.Transform.toString(columnTransform),
+        transition: columnTransition,
+        opacity: isColumnDragging ? 0.5 : 1,
+      }}
     >
       {column.kind === 'custom' ? (
-      <div className="column-header" ref={menuRef} style={{ position: 'relative' }}>
+      <div className="column-header" ref={menuRef} style={{ position: 'relative' }} {...columnAttributes} {...columnListeners}>
         {renaming ? (
           <input
             autoFocus
@@ -130,7 +144,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         )}
       </div>
     ) : (
-      <div className="column-header">
+      <div className="column-header" {...columnAttributes} {...columnListeners}>
         <h3>{column.title}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="task-count">{tasks.length}</span>
@@ -138,7 +152,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
       </div>
     )}
 
-      <div ref={setNodeRef} className="column-tasks">
+      <div ref={setDroppableRef} className="column-tasks">
         <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map(task => (
             <TaskCard
