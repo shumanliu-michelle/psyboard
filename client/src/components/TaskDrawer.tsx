@@ -213,7 +213,7 @@ export function TaskDrawer({
             <div className="task-drawer-btn-group">
               <button
                 type="button"
-                className={priority === 'low' ? 'selected' : ''}
+                className={`priority-low${priority === 'low' ? ' selected' : ''}`}
                 onClick={() => togglePriority('low')}
                 disabled={isCompleted}
               >
@@ -221,7 +221,7 @@ export function TaskDrawer({
               </button>
               <button
                 type="button"
-                className={priority === 'medium' ? 'selected' : ''}
+                className={`priority-medium${priority === 'medium' ? ' selected' : ''}`}
                 onClick={() => togglePriority('medium')}
                 disabled={isCompleted}
               >
@@ -229,7 +229,7 @@ export function TaskDrawer({
               </button>
               <button
                 type="button"
-                className={priority === 'high' ? 'selected' : ''}
+                className={`priority-high${priority === 'high' ? ' selected' : ''}`}
                 onClick={() => togglePriority('high')}
                 disabled={isCompleted}
               >
@@ -243,7 +243,7 @@ export function TaskDrawer({
             <div className="task-drawer-btn-group">
               <button
                 type="button"
-                className={assignee === 'SL' ? 'selected' : ''}
+                className={`assignee-sl${assignee === 'SL' ? ' selected' : ''}`}
                 onClick={() => toggleAssignee('SL')}
                 disabled={isCompleted}
               >
@@ -251,7 +251,7 @@ export function TaskDrawer({
               </button>
               <button
                 type="button"
-                className={assignee === 'KL' ? 'selected' : ''}
+                className={`assignee-kl${assignee === 'KL' ? ' selected' : ''}`}
                 onClick={() => toggleAssignee('KL')}
                 disabled={isCompleted}
               >
