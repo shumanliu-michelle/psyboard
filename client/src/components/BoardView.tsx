@@ -7,7 +7,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCenter,
+  rectIntersection,
 } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Board, Column, Task } from '../types'
@@ -97,7 +97,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
 
   const columnSensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
+      activationConstraint: { distance: 15 },
     })
   )
 
@@ -250,7 +250,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     <div className="board">
       <DndContext
         sensors={columnSensors}
-        collisionDetection={closestCenter}
+        collisionDetection={rectIntersection}
         onDragStart={handleColumnDragStart}
         onDragEnd={handleColumnDragEnd}
       >
