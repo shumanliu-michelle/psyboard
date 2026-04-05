@@ -94,10 +94,16 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
     }
   }
 
+  const priorityColor = task.priority === 'high' ? '#dc2626' : task.priority === 'medium' ? '#d97706' : '#059669'
+
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, position: 'relative' }}
+      style={{
+        ...style,
+        position: 'relative',
+        borderLeft: task.priority ? `3px solid ${priorityColor}` : undefined,
+      }}
       className={`task-card${isDragging ? ' dragging' : ''}`}
       onClick={() => onOpenEdit()}
     >
@@ -233,12 +239,12 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         {task.title}
       </div>
       {task.description && (
-        <div style={{ paddingLeft: 32, marginTop: 2, fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ paddingLeft: 32, marginTop: 6, fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {task.description}
         </div>
       )}
       {task.assignee && (
-        <div style={{ marginTop: 4, paddingLeft: 28 }}>
+        <div style={{ marginTop: 6, paddingLeft: 28 }}>
           <span style={{
             background: task.assignee === 'SL' ? '#d1fae5' : '#dbeafe',
             color: task.assignee === 'SL' ? '#065f46' : '#1e40af',
@@ -248,20 +254,6 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
             fontWeight: 500,
           }}>
             {task.assignee}
-          </span>
-        </div>
-      )}
-      {task.priority && (
-        <div style={{ marginTop: 4, paddingLeft: 28 }}>
-          <span style={{
-            background: task.priority === 'high' ? '#fee2e2' : task.priority === 'medium' ? '#fef3c7' : '#d1fae5',
-            color: task.priority === 'high' ? '#991b1b' : task.priority === 'medium' ? '#92400e' : '#065f46',
-            borderRadius: 4,
-            padding: '2px 6px',
-            fontSize: 11,
-            fontWeight: 500,
-          }}>
-            {task.priority === 'high' ? '↑ High' : task.priority === 'medium' ? '→ Med' : '↓ Low'}
           </span>
         </div>
       )}

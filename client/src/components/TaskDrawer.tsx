@@ -281,25 +281,28 @@ export function TaskDrawer({
               Cancel
             </button>
           </div>
+        </div>
 
-          {mode === 'edit' && task && task.columnId !== DONE_COLUMN_ID && (
-            <div className="text-actions">
-              <button className="btn-text" onClick={handleMarkDone}>
+        {mode === 'edit' && task && (
+          <div className="task-drawer-danger-zone">
+            {task.columnId !== DONE_COLUMN_ID && (
+              <button
+                className="btn-danger-full"
+                onClick={handleMarkDone}
+                disabled={saving}
+              >
                 Mark done
               </button>
-              <button className="btn-text danger" onClick={handleDelete}>
-                Delete task
-              </button>
-            </div>
-          )}
-          {mode === 'edit' && task && task.columnId === DONE_COLUMN_ID && (
-            <div className="text-actions">
-              <button className="btn-text danger" onClick={handleDelete}>
-                Delete task
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+            <button
+              className="btn-danger-full btn-danger-outline"
+              onClick={handleDelete}
+              disabled={saving}
+            >
+              Delete task
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

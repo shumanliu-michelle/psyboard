@@ -350,6 +350,40 @@ body {
   flex-shrink: 0;
 }
 
+.task-drawer-danger-zone {
+  padding: 12px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-danger-full {
+  width: 100%;
+  padding: 10px;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-danger-full.btn-danger-outline {
+  background: white;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.btn-danger-full.btn-danger-outline:hover {
+  background: #fef2f2;
+}
+
+.btn-danger-full:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .task-drawer-actions .primary-actions {
   display: flex;
   gap: 10px;
