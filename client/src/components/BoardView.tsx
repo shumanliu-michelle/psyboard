@@ -7,7 +7,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCenter,
 } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Board, Column, Task } from '../types'
@@ -95,25 +94,46 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     })
   )
 
-  const columnSensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    })
-  )
-
   function handleDragStart(event: DragStartEvent) {
     document.body.style.overflow = 'hidden'
-    const task = board.tasks.find(t => t.id === event.active.id)
-    if (task) setActiveTask(task)
+    // Check data.type to distinguish column drag from task drag
+    const dragType = (event.active.data.current as { type?: string }).type
+    if (dragType === 'column') {
+      const column = board.columns.find(c => c.id === event.active.id)
+      if (column) setActiveColumn(column)
+    } else {
+      const task = board.tasks.find(t => t.id === event.active.id)
+      if (task) setActiveTask(task)
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
     document.body.style.overflow = 'auto'
     const { active, over } = event
     setActiveTask(null)
+    setActiveColumn(null)
 
     if (!over) return
 
+    const dragType = (active.data.current as { type?: string }).type
+
+    // Handle column reordering
+    if (dragType === 'column') {
+      if (active.id === over.id) return
+
+      const sortedColumns = board.columns.slice().sort((a, b) => a.position - b.position)
+      const oldIndex = sortedColumns.findIndex(c => c.id === active.id)
+      const newIndex = sortedColumns.findIndex(c => c.id === over.id)
+      if (oldIndex === -1 || newIndex === -1) return
+
+      const columnIds = sortedColumns.map(c => c.id)
+      columnIds.splice(oldIndex, 1)
+      columnIds.splice(newIndex, 0, active.id as string)
+      api.reorderColumns(columnIds).then(onRefresh).catch(console.error)
+      return
+    }
+
+    // Handle task drag
     const taskId = active.id as string
     const task = board.tasks.find(t => t.id === taskId)
     if (!task) return
@@ -128,7 +148,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         // Block moving out of Today if it would be immediately reconcile-promoted back
         const today = getToday()
         const wouldReconcile =
-          targetColumnId !== DONE_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID &&  
+          targetColumnId !== DONE_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID &&
           (task.doDate && task.doDate <= today || (task.doDate == null && task.dueDate != null && task.dueDate <= today))
         if (wouldReconcile) {
           setBlockedDrag({ task, targetColumnId })
@@ -152,6 +172,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
           api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
         }
       }
+      return
     }
 
     // Same-column reordering: dropped on another task
@@ -192,34 +213,6 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     }
   }
 
-  function handleColumnDragStart(event: DragStartEvent) {
-    document.body.style.overflow = 'hidden'
-    const column = board.columns.find(c => c.id === event.active.id)
-    if (column) setActiveColumn(column)
-  }
-
-  function handleColumnDragEnd(event: DragEndEvent) {
-    document.body.style.overflow = 'auto'
-    const { active, over } = event
-    setActiveColumn(null)
-
-    if (!over || active.id === over.id) return
-
-    // Sort columns by position to match how SortableContext renders them
-    const sortedColumns = board.columns.slice().sort((a, b) => a.position - b.position)
-    const oldIndex = sortedColumns.findIndex(c => c.id === active.id)
-    const newIndex = sortedColumns.findIndex(c => c.id === over.id)
-
-    if (oldIndex === -1 || newIndex === -1) return
-
-    // Build new ordered columnIds array from sorted order
-    const columnIds = sortedColumns.map(c => c.id)
-    columnIds.splice(oldIndex, 1)
-    columnIds.splice(newIndex, 0, active.id as string)
-
-    api.reorderColumns(columnIds).then(onRefresh).catch(console.error)
-  }
-
   function validateBlockedDates(doDate: string, dueDate: string) {
     if (doDate && dueDate && dueDate < doDate) {
       setBlockedDragDateError('Due date cannot be earlier than do date.')
@@ -249,13 +242,12 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
 
   return (
     <>
-    <div className="board">
-      <DndContext
-        sensors={columnSensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleColumnDragStart}
-        onDragEnd={handleColumnDragEnd}
-      >
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="board">
         <SortableContext
           items={board.columns.slice().sort((a, b) => a.position - b.position).map(c => c.id)}
           strategy={horizontalListSortingStrategy}
@@ -285,47 +277,35 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
             })}
         </SortableContext>
 
-        <DragOverlay>
-          {activeColumn ? (
-            <div className="column" style={{
-              opacity: 0.9,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-              userSelect: 'none',
-              WebkitUserSelect: 'none',
-              touchAction: 'none',
-              minWidth: 240,
-            }}>
-              <div className="column-header">
-                <h3>{activeColumn.title}</h3>
-              </div>
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-
-      <div className="add-column">
-        {showAddColumn ? (
-          <AddColumnForm
-            onAdded={() => { setShowAddColumn(false); onRefresh() }}
-            onCancel={() => setShowAddColumn(false)}
-          />
-        ) : (
-          <button className="add-column-btn" onClick={() => setShowAddColumn(true)}>
-            + Add column
-          </button>
-        )}
+        <div className="add-column">
+          {showAddColumn ? (
+            <AddColumnForm
+              onAdded={() => { setShowAddColumn(false); onRefresh() }}
+              onCancel={() => setShowAddColumn(false)}
+            />
+          ) : (
+            <button className="add-column-btn" onClick={() => setShowAddColumn(true)}>
+              + Add column
+            </button>
+          )}
+        </div>
       </div>
-    </div>
 
-    {/* Task DndContext - separate from column DnD */}
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      {/* Task drag overlay - moved outside DndContext children */}
       <DragOverlay>
-        {activeTask ? (
+        {activeColumn ? (
+          <div className="column" style={{
+            opacity: 0.9,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            touchAction: 'none',
+            minWidth: 240,
+          }}>
+            <div className="column-header">
+              <h3>{activeColumn.title}</h3>
+            </div>
+          </div>
+        ) : activeTask ? (
           <div className="task-card" data-dnd-drag-overlay style={{ opacity: 0.9, boxShadow: '0 4px 12px rgba(0,0,0,0.2)', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}>
             <div className="task-card-title">{activeTask.title}</div>
           </div>
