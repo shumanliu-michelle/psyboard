@@ -35,4 +35,7 @@ export const api = {
 
   deleteTask: (id: string) =>
     request<void>(`/tasks/${id}`, { method: 'DELETE' }),
+
+  reorderColumns: (columnIds: string[]) =>
+    request<{ columns: Column[] }>('/columns/reorder', { method: 'POST', body: JSON.stringify({ columnIds }) }),
 }
