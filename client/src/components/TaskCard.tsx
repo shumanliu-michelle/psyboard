@@ -232,6 +232,11 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
       <div className="task-card-title" style={{ paddingLeft: 32 }} onDoubleClick={() => onOpenEdit()}>
         {task.title}
       </div>
+      {task.description && (
+        <div style={{ paddingLeft: 32, marginTop: 2, fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {task.description}
+        </div>
+      )}
       {task.assignee && (
         <div style={{ marginTop: 4, paddingLeft: 28 }}>
           <span style={{

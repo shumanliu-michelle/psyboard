@@ -44,6 +44,8 @@ export function TaskDrawer({
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const isCompleted = mode === 'edit' && task?.columnId === DONE_COLUMN_ID
+
   // Escape key handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -164,6 +166,7 @@ export function TaskDrawer({
               onChange={e => setTitle(e.target.value)}
               placeholder="Task title"
               autoFocus
+              readOnly={isCompleted}
             />
           </div>
 
@@ -174,6 +177,7 @@ export function TaskDrawer({
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Add description..."
+              readOnly={isCompleted}
             />
           </div>
 
@@ -185,6 +189,7 @@ export function TaskDrawer({
                 type="date"
                 value={doDate}
                 onChange={e => setDoDate(e.target.value)}
+                disabled={isCompleted}
               />
             </div>
             <div className="task-drawer-field">
@@ -194,6 +199,7 @@ export function TaskDrawer({
                 type="date"
                 value={dueDate}
                 onChange={e => setDueDate(e.target.value)}
+                disabled={isCompleted}
               />
             </div>
           </div>
@@ -208,6 +214,7 @@ export function TaskDrawer({
                 type="button"
                 className={priority === 'low' ? 'selected' : ''}
                 onClick={() => togglePriority('low')}
+                disabled={isCompleted}
               >
                 Low
               </button>
@@ -215,6 +222,7 @@ export function TaskDrawer({
                 type="button"
                 className={priority === 'medium' ? 'selected' : ''}
                 onClick={() => togglePriority('medium')}
+                disabled={isCompleted}
               >
                 Med
               </button>
@@ -222,6 +230,7 @@ export function TaskDrawer({
                 type="button"
                 className={priority === 'high' ? 'selected' : ''}
                 onClick={() => togglePriority('high')}
+                disabled={isCompleted}
               >
                 High
               </button>
@@ -235,6 +244,7 @@ export function TaskDrawer({
                 type="button"
                 className={assignee === 'SL' ? 'selected' : ''}
                 onClick={() => toggleAssignee('SL')}
+                disabled={isCompleted}
               >
                 SL
               </button>
@@ -242,6 +252,7 @@ export function TaskDrawer({
                 type="button"
                 className={assignee === 'KL' ? 'selected' : ''}
                 onClick={() => toggleAssignee('KL')}
+                disabled={isCompleted}
               >
                 KL
               </button>
@@ -249,6 +260,7 @@ export function TaskDrawer({
                 type="button"
                 className={assignee === undefined ? 'selected' : ''}
                 onClick={() => setAssignee(undefined)}
+                disabled={isCompleted}
               >
                 None
               </button>
