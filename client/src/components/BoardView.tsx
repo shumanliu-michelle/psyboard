@@ -300,19 +300,19 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
           ) : null}
         </DragOverlay>
       </DndContext>
-    </div>
 
-    <div className="add-column">
-      {showAddColumn ? (
-        <AddColumnForm
-          onAdded={() => { setShowAddColumn(false); onRefresh() }}
-          onCancel={() => setShowAddColumn(false)}
-        />
-      ) : (
-        <button className="add-column-btn" onClick={() => setShowAddColumn(true)}>
-          + Add column
-        </button>
-      )}
+      <div className="add-column">
+        {showAddColumn ? (
+          <AddColumnForm
+            onAdded={() => { setShowAddColumn(false); onRefresh() }}
+            onCancel={() => setShowAddColumn(false)}
+          />
+        ) : (
+          <button className="add-column-btn" onClick={() => setShowAddColumn(true)}>
+            + Add column
+          </button>
+        )}
+      </div>
     </div>
 
     {/* Task DndContext - separate from column DnD */}
