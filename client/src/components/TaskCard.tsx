@@ -6,8 +6,8 @@ import { api } from '../api'
 
 interface TaskCardProps {
   task: Task
-  onUpdated: () => void
   onDeleted: () => void
+  onOpenEdit: () => void
 }
 
 const GripIcon = () => (
@@ -29,26 +29,22 @@ export const KebabIcon = () => (
   </svg>
 )
 
-export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
-  const [editing, setEditing] = useState(false)
-  const [title, setTitle] = useState(task.title)
-  const [showAssign, setShowAssign] = useState(false)
+export function TaskCard({ task, onDeleted, onOpenEdit }: TaskCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  // Close menu/popover on click outside
+  // Close menu on click outside
   useEffect(() => {
-    if (!showMenu && !showAssign) return
+    if (!showMenu) return
     const handler = (e: MouseEvent) => {
       const menuEl = popoverRef.current
       if (menuEl && !menuEl.contains(e.target as Node)) {
         setShowMenu(false)
-        setShowAssign(false)
       }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [showMenu, showAssign])
+  }, [showMenu])
 
   const {
     attributes,
@@ -64,17 +60,6 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
     transition,
   }
 
-  async function handleSave() {
-    if (!title.trim()) return
-    try {
-      await api.updateTask(task.id, { title: title.trim() })
-      setEditing(false)
-      onUpdated()
-    } catch (err) {
-      console.error('Failed to update task:', err)
-    }
-  }
-
   async function handleDelete() {
     try {
       await api.deleteTask(task.id)
@@ -82,28 +67,6 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
     } catch (err) {
       console.error('Failed to delete task:', err)
     }
-  }
-
-  if (editing) {
-    return (
-      <div className="task-card" ref={setNodeRef} style={style}>
-        <div className="task-card-title">
-          <input
-            autoFocus
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') handleSave()
-              if (e.key === 'Escape') {
-                setTitle(task.title)
-                setEditing(false)
-              }
-            }}
-            onBlur={handleSave}
-          />
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -163,13 +126,13 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
             minWidth: 90,
           }}>
             <button
-              onClick={e => { e.stopPropagation(); setShowMenu(false); setShowAssign(true) }}
+              onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
               style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
             >
               Assign
             </button>
             <button
-              onClick={e => { e.stopPropagation(); setShowMenu(false); setEditing(true) }}
+              onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
               style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
             >
               Edit
@@ -183,7 +146,7 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
           </div>
         )}
       </div>
-      <div className="task-card-title" style={{ paddingLeft: 32 }} onDoubleClick={() => setEditing(true)}>
+      <div className="task-card-title" style={{ paddingLeft: 32 }} onDoubleClick={() => onOpenEdit()}>
         {task.title}
       </div>
       {task.assignee && (
@@ -198,74 +161,6 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
           }}>
             {task.assignee}
           </span>
-        </div>
-      )}
-      {showAssign && (
-        <div ref={popoverRef} style={{
-          position: 'absolute',
-          top: 28,
-          right: 8,
-          background: 'white',
-          border: '1px solid #e5e7eb',
-          borderRadius: 6,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          padding: 8,
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-          minWidth: 100,
-        }}>
-          {(['SL', 'KL'] as const).map(opt => (
-            <button
-              key={opt}
-              onClick={async e => {
-                e.stopPropagation()
-                try {
-                  await api.updateTask(task.id, { assignee: opt })
-                  onUpdated()
-                  setShowAssign(false)
-                } catch (err) {
-                  console.error('Failed to assign:', err)
-                }
-              }}
-              style={{
-                background: task.assignee === opt ? (opt === 'SL' ? '#d1fae5' : '#dbeafe') : 'none',
-                border: 'none',
-                borderRadius: 4,
-                padding: '4px 8px',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: 13,
-              }}
-            >
-              {opt}
-            </button>
-          ))}
-          <button
-            onClick={async e => {
-              e.stopPropagation()
-              try {
-                await api.updateTask(task.id, { assignee: null })
-                onUpdated()
-                setShowAssign(false)
-              } catch (err) {
-                console.error('Failed to unassign:', err)
-              }
-            }}
-            style={{
-              background: !task.assignee ? '#f3f4f6' : 'none',
-              border: 'none',
-              borderRadius: 4,
-              padding: '4px 8px',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: 13,
-              color: '#6b7280',
-            }}
-          >
-            Unassigned
-          </button>
         </div>
       )}
     </div>

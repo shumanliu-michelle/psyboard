@@ -116,6 +116,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
                 column={column}
                 tasks={columnTasks}
                 onRefresh={onRefresh}
+                onOpenDrawer={() => {}}
               />
             )
           })}
