@@ -29,11 +29,13 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
   )
 
   function handleDragStart(event: DragStartEvent) {
+    document.body.style.overflow = 'hidden'
     const task = board.tasks.find(t => t.id === event.active.id)
     if (task) setActiveTask(task)
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    document.body.style.overflow = ''
     const { active, over } = event
     setActiveTask(null)
 
