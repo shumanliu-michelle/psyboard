@@ -100,10 +100,14 @@ export function writeBoard(board: Board): void {
 // Column operations
 export function createColumn(title: string): Column {
   const board = readBoard()
+  const now = new Date().toISOString()
   const column: Column = {
     id: randomUUID(),
     title,
-    order: board.columns.length,
+    kind: 'custom',
+    position: board.columns.length,
+    createdAt: now,
+    updatedAt: now,
   }
   board.columns.push(column)
   writeBoard(board)
@@ -112,10 +116,81 @@ export function createColumn(title: string): Column {
 
 export function deleteColumn(id: string): void {
   const board = readBoard()
+  const column = board.columns.find(c => c.id === id)
+
+  if (!column) {
+    throw new Error('Column not found')
+  }
+  if (column.kind === 'system') {
+    throw new Error('Cannot delete system column')
+  }
+
+  // Move tasks to Backlog
+  board.tasks = board.tasks.map(t =>
+    t.columnId === id ? { ...t, columnId: BACKLOG_COLUMN_ID } : t
+  )
+
   board.columns = board.columns.filter(c => c.id !== id)
-  // Also delete all tasks in this column
-  board.tasks = board.tasks.filter(t => t.columnId !== id)
   writeBoard(board)
+}
+
+const RESERVED_NAMES = ['Backlog', 'Today', 'Done']
+
+export function updateColumn(id: string, updates: { title?: string; position?: number }): Column {
+  const board = readBoard()
+  const column = board.columns.find(c => c.id === id)
+
+  if (!column) {
+    throw new Error('Column not found')
+  }
+  if (column.kind === 'system') {
+    throw new Error('Cannot update a system column')
+  }
+
+  if (updates.title !== undefined) {
+    if (RESERVED_NAMES.includes(updates.title.trim())) {
+      throw new Error('Cannot rename column to a reserved name')
+    }
+    column.title = updates.title.trim()
+  }
+
+  if (updates.position !== undefined) {
+    const oldPos = column.position
+    const newPos = updates.position
+
+    board.columns.forEach(c => {
+      if (c.id === id) {
+        c.position = newPos
+      } else if (oldPos < newPos) {
+        if (c.position > oldPos && c.position <= newPos) {
+          c.position = c.position - 1
+        }
+      } else if (oldPos > newPos) {
+        if (c.position >= newPos && c.position < oldPos) {
+          c.position = c.position + 1
+        }
+      }
+    })
+  }
+
+  column.updatedAt = new Date().toISOString()
+  writeBoard(board)
+  return column
+}
+
+export function reorderColumns(columnIds: string[]): Column[] {
+  const board = readBoard()
+
+  columnIds.forEach((id, index) => {
+    const col = board.columns.find(c => c.id === id)
+    if (col) {
+      col.position = index
+      col.updatedAt = new Date().toISOString()
+    }
+  })
+
+  writeBoard(board)
+  return board.columns.slice().sort((a, b) => a.position - b.position)
 }
 
 // Task operations
