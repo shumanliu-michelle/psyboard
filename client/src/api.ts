@@ -24,6 +24,9 @@ export const api = {
   deleteColumn: (id: string) =>
     request<void>(`/columns/${id}`, { method: 'DELETE' }),
 
+  updateColumn: (id: string, updates: { title?: string; position?: number }) =>
+    request<Column>(`/columns/${id}`, { method: 'PATCH', body: JSON.stringify(updates) }),
+
   createTask: (data: CreateTaskInput) =>
     request<import('./types').Task>('/tasks', { method: 'POST', body: JSON.stringify(data) }),
 

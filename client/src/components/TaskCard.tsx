@@ -10,22 +10,11 @@ interface TaskCardProps {
   onDeleted: () => void
 }
 
-const PencilIcon = () => (
+export const KebabIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-  </svg>
-)
-
-const CrossIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 6 6 18M6 6l12 12"/>
-  </svg>
-)
-
-const PersonIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
+    <circle cx="12" cy="5" r="1" fill="currentColor" />
+    <circle cx="12" cy="12" r="1" fill="currentColor" />
+    <circle cx="12" cy="19" r="1" fill="currentColor" />
   </svg>
 )
 
@@ -33,19 +22,22 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(task.title)
   const [showAssign, setShowAssign] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  // Close popover on click outside
+  // Close menu/popover on click outside
   useEffect(() => {
-    if (!showAssign) return
+    if (!showMenu && !showAssign) return
     const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      const menuEl = popoverRef.current
+      if (menuEl && !menuEl.contains(e.target as Node)) {
+        setShowMenu(false)
         setShowAssign(false)
       }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [showAssign])
+  }, [showMenu, showAssign])
 
   const {
     attributes,
@@ -116,34 +108,53 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
         top: 8,
         right: 8,
         display: 'flex',
-        gap: 4,
+        flexDirection: 'column',
         alignItems: 'center',
         zIndex: 5,
       }}>
-        {/* Person/assign icon */}
         <button
-          onClick={e => { e.stopPropagation(); setShowAssign(!showAssign) }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px', display: 'flex' }}
-          aria-label="Assign"
+          onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}
+          aria-label="Menu"
         >
-          <PersonIcon />
+          <KebabIcon />
         </button>
-        {/* Pencil icon */}
-        <button
-          onClick={e => { e.stopPropagation(); setEditing(true) }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px', display: 'flex' }}
-          aria-label="Edit"
-        >
-          <PencilIcon />
-        </button>
-        {/* Cross icon */}
-        <button
-          onClick={e => { e.stopPropagation(); handleDelete() }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px', display: 'flex' }}
-          aria-label="Delete"
-        >
-          <CrossIcon />
-        </button>
+        {showMenu && (
+          <div ref={popoverRef} style={{
+            position: 'absolute',
+            top: 24,
+            right: 0,
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: 6,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            padding: 4,
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            minWidth: 90,
+          }}>
+            <button
+              onClick={e => { e.stopPropagation(); setShowMenu(false); setShowAssign(true) }}
+              style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+            >
+              Assign
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); setShowMenu(false); setEditing(true) }}
+              style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+            >
+              Edit
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); setShowMenu(false); handleDelete() }}
+              style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </div>
       <div className="task-card-title" onDoubleClick={() => setEditing(true)}>
         {task.title}
