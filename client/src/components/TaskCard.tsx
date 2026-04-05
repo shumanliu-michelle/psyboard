@@ -144,11 +144,11 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
 
       {/* Right: kebab + assignee — full height, right-aligned */}
       <div style={{
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
-        padding: '8px 4px',
         flexShrink: 0,
       }}>
         <button
@@ -161,8 +161,8 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         {showMenu && (
           <div ref={popoverRef} style={{
             position: 'absolute',
-            top: 8,
-            right: 32,
+            top: 0,
+            right: 28,
             background: 'white',
             border: '1px solid #e5e7eb',
             borderRadius: 6,
