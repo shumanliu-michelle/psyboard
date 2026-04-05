@@ -134,8 +134,8 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     }
   }
 
-  function validateBlockedDates() {
-    if (blockedDragDoDate && blockedDragDueDate && blockedDragDueDate < blockedDragDoDate) {
+  function validateBlockedDates(doDate: string, dueDate: string) {
+    if (doDate && dueDate && dueDate < doDate) {
       setBlockedDragDateError('Due date cannot be earlier than do date.')
     } else {
       setBlockedDragDateError('')
@@ -245,7 +245,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
                   id="blocked-do-date"
                   type="date"
                   value={blockedDragDoDate}
-                  onChange={e => { setBlockedDragDoDate(e.target.value); validateBlockedDates() }}
+                  onChange={e => { setBlockedDragDoDate(e.target.value); validateBlockedDates(e.target.value, blockedDragDueDate) }}
                 />
               </div>
               <div className="task-drawer-field">
@@ -254,7 +254,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
                   id="blocked-due-date"
                   type="date"
                   value={blockedDragDueDate}
-                  onChange={e => { setBlockedDragDueDate(e.target.value); validateBlockedDates() }}
+                  onChange={e => { setBlockedDragDueDate(e.target.value); validateBlockedDates(blockedDragDoDate, e.target.value) }}
                 />
               </div>
             </div>
