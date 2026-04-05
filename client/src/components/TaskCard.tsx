@@ -97,7 +97,11 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
     }
   }
 
-  const priorityColor = task.priority === 'high' ? '#dc2626' : task.priority === 'medium' ? '#f59e0b' : '#059669'
+  const priorityColor =
+  task.priority === 'high'   ? '#ef4444' :
+  task.priority === 'medium' ? '#f59e0b' :
+  task.priority === 'low'    ? '#22c55e' :
+  undefined
 
   return (
     <div
@@ -106,7 +110,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         ...style,
         display: 'flex',
         flexDirection: 'row',
-        borderLeft: task.priority ? `3px solid ${priorityColor}` : undefined,
+        borderLeft: task.priority ? `3px solid ${priorityColor}` : '3px solid transparent',
       }}
       className={`task-card${isDragging ? ' dragging' : ''}`}
       onClick={() => onOpenEdit()}
@@ -139,7 +143,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
           {task.title}
         </div>
         {task.description && (
-          <div style={{ paddingLeft: 4, marginTop: 6, fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div className="task-description">
             {task.description}
           </div>
         )}
@@ -260,16 +264,17 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         )}
         {task.assignee && (
           <span style={{
-            background: task.assignee === 'SL' ? '#d1fae5' : '#dbeafe',
-            color: task.assignee === 'SL' ? '#065f46' : '#1e40af',
+            background: task.assignee === 'SL' ? '#eef2ff' : '#dbeafe',
+            color: task.assignee === 'SL' ? '#6366f1' : '#1e40af',
             borderRadius: '50%',
-            width: 24,
-            height: 24,
-            fontSize: 11,
-            fontWeight: 500,
+            width: 20,
+            height: 20,
+            fontSize: 10,
+            fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
           }}>
             {task.assignee}
           </span>
