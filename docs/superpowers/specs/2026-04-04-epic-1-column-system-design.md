@@ -124,20 +124,28 @@ Update `Column` type to match server. Add constants.
 ### `ColumnCard.tsx`
 
 **Custom column header UI:**
-- Title text (editable inline on double-click)
-- Kebab menu button (⋮) with options:
-  - Rename
-  - Delete (→ confirmation dialog)
-- System columns: no kebab menu
+- Title text (display only — not editable inline on double-click for v1)
+- Kebab menu button (⋮) anchored top-right of column header, matching TaskCard's kebab menu style
+- Kebab menu dropdown contains:
+  - **Rename** — opens inline edit mode for the title
+  - **Delete** — shows confirmation dialog
+- System columns: no kebab menu (protected, no actions available)
+
+**Rename inline edit:**
+- Single-click kebab → dropdown opens → click "Rename" to enter edit mode
+- Title becomes an input field
+- Enter to save, Escape to cancel
+- API call: `PATCH /api/columns/:id` with `{ title }`
+- Cannot rename to "Backlog", "Today", or "Done" (validation rejects)
 
 **Delete confirmation dialog:**
 - Modal text: "Delete column `{title}`? All tasks will be moved to Backlog."
 - Actions: Cancel / Delete
 
-**Rename inline edit:**
-- Double-click title to enter edit mode (custom columns only)
-- Enter to save, Escape to cancel
-- API call: `PATCH /api/columns/:id` with `{ title }`
+**Kebab menu style consistency:**
+- Dropdown matches TaskCard's dropdown: white background, `1px solid #e5e7eb` border, `6px` border-radius, `0 4px 12px rgba(0,0,0,0.1)` box-shadow
+- Menu items: text buttons (no icons), `Assign`/`Edit`/`Delete` pattern — for columns: "Rename" and "Delete" in dark text (`#374151`), Delete in red (`#dc2626`)
+- Click outside closes dropdown
 
 **Add task button behavior:**
 - Shown on ALL columns including Backlog and custom columns
