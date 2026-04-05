@@ -9,7 +9,7 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import type { Board, Task } from '../types'
-import { TODAY_COLUMN_ID } from '../types'
+import { TODAY_COLUMN_ID, DONE_COLUMN_ID } from '../types'
 import { ColumnCard } from './ColumnCard'
 import { AddColumnForm } from './AddColumnForm'
 import { TaskDrawer } from './TaskDrawer'
@@ -119,8 +119,8 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         // Block moving out of Today if it would be immediately reconcile-promoted back
         const today = getToday()
         const wouldReconcile =
-          (task.columnId === TODAY_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID) &&
-          (task.doDate === today || (task.doDate == null && task.dueDate != null && task.dueDate <= today))
+          targetColumnId !== DONE_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID &&  
+          (task.doDate && task.doDate <= today || (task.doDate == null && task.dueDate != null && task.dueDate <= today))
         if (wouldReconcile) {
           setBlockedDrag({ task, targetColumnId })
           setBlockedDragDoDate(task.doDate ?? '')
@@ -130,6 +130,41 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         }
         // Move to new column
         api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
+      }
+    }
+
+    // Same-column reordering: dropped on another task
+    if (overTask && overTask.columnId === task.columnId) {
+      const column = board.columns.find(c => c.id === task.columnId)
+      if (column && column.systemKey !== 'done' && column.systemKey !== 'backlog') {
+        const colTasks = board.tasks
+          .filter(t => t.columnId === task.columnId)
+          .sort((a, b) => (a.manualOrder ?? a.order) - (b.manualOrder ?? b.order))
+
+        const oldIndex = colTasks.findIndex(t => t.id === taskId)
+        const newIndex = colTasks.findIndex(t => t.id === over.id)
+
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          // Calculate new manualOrder based on adjacent tasks at the target position
+          // Tasks use manualOrder (ascending), lower values appear first
+          let newOrderVal: number
+          if (newIndex === 0) {
+            // Moving to first position — use half of current first task's order, or -1 if none
+            newOrderVal = colTasks.length > 0 ? colTasks[0].manualOrder / 2 : 0
+          } else if (newIndex >= colTasks.length - 1) {
+            // Moving to last position — use current last + 1 (or 1 if none)
+            newOrderVal = colTasks.length > 0 ? (colTasks[colTasks.length - 1].manualOrder ?? colTasks[colTasks.length - 1].order) + 1 : 0
+          } else {
+            // Moving between two tasks — average of neighbors
+            const before = colTasks[newIndex - 1]
+            const after = colTasks[newIndex]
+            const beforeOrder = before.manualOrder ?? before.order
+            const afterOrder = after.manualOrder ?? after.order
+            newOrderVal = (beforeOrder + afterOrder) / 2
+          }
+          console.log('[reorder]', { taskId, oldIndex, newIndex, newOrderVal })
+          api.updateTask(taskId, { manualOrder: newOrderVal }).then(onRefresh).catch(console.error)
+        }
       }
     }
   }
