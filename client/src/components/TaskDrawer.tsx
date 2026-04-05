@@ -277,7 +277,7 @@ export function TaskDrawer({
             >
               {saving ? 'Saving...' : 'Save'}
             </button>
-            <button className="btn-cancel" onClick={onClose} disabled={mode === 'edit' && task?.columnId === DONE_COLUMN_ID}>
+            <button className="btn-cancel" onClick={onClose}>
               Cancel
             </button>
           </div>
