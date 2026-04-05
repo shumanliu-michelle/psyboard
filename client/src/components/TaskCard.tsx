@@ -10,6 +10,17 @@ interface TaskCardProps {
   onDeleted: () => void
 }
 
+const GripIcon = () => (
+  <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" style={{ flexShrink: 0, cursor: 'grab' }}>
+    <circle cx="2" cy="2.5" r="1.5" />
+    <circle cx="8" cy="2.5" r="1.5" />
+    <circle cx="2" cy="8" r="1.5" />
+    <circle cx="8" cy="8" r="1.5" />
+    <circle cx="2" cy="13.5" r="1.5" />
+    <circle cx="8" cy="13.5" r="1.5" />
+  </svg>
+)
+
 export const KebabIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="5" r="1" fill="currentColor" />
@@ -100,9 +111,25 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
       ref={setNodeRef}
       style={{ ...style, position: 'relative' }}
       className={`task-card${isDragging ? ' dragging' : ''}`}
-      {...attributes}
-      {...listeners}
     >
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        width: 20,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 5,
+        cursor: 'grab',
+        touchAction: 'none',
+      }}
+        {...attributes}
+        {...listeners}
+      >
+        <GripIcon />
+      </div>
       <div style={{
         position: 'absolute',
         top: 8,
@@ -156,7 +183,7 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
           </div>
         )}
       </div>
-      <div className="task-card-title" onDoubleClick={() => setEditing(true)}>
+      <div className="task-card-title" style={{ paddingLeft: 24 }} onDoubleClick={() => setEditing(true)}>
         {task.title}
       </div>
       {task.assignee && (
