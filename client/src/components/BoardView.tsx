@@ -129,7 +129,19 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
           return
         }
         // Move to new column
-        api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
+        const targetColumn = board.columns.find(c => c.id === targetColumnId)
+        const isSortableColumn = targetColumn && targetColumn.systemKey !== 'done' && targetColumn.systemKey !== 'backlog'
+        if (isSortableColumn) {
+          // Put at top of target column by assigning manualOrder less than current first task
+          const targetTasks = board.tasks
+            .filter(t => t.columnId === targetColumnId)
+            .sort((a, b) => (a.manualOrder ?? a.order) - (b.manualOrder ?? b.order))
+          const firstOrder = targetTasks.length > 0 ? (targetTasks[0].manualOrder ?? targetTasks[0].order) : 0
+          const newOrderVal = firstOrder / 2
+          api.updateTask(taskId, { columnId: targetColumnId, manualOrder: newOrderVal }).then(onRefresh).catch(console.error)
+        } else {
+          api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
+        }
       }
     }
 
@@ -150,10 +162,12 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
           let newOrderVal: number
           if (newIndex === 0) {
             // Moving to first position — use half of current first task's order, or -1 if none
-            newOrderVal = colTasks.length > 0 ? colTasks[0].manualOrder / 2 : 0
+            const firstOrder = colTasks.length > 0 ? (colTasks[0].manualOrder ?? colTasks[0].order) : 0
+            newOrderVal = firstOrder / 2
           } else if (newIndex >= colTasks.length - 1) {
             // Moving to last position — use current last + 1 (or 1 if none)
-            newOrderVal = colTasks.length > 0 ? (colTasks[colTasks.length - 1].manualOrder ?? colTasks[colTasks.length - 1].order) + 1 : 0
+            const last = colTasks[colTasks.length - 1]
+            newOrderVal = colTasks.length > 0 ? (last.manualOrder ?? last.order) + 1 : 0
           } else {
             // Moving between two tasks — average of neighbors
             const before = colTasks[newIndex - 1]
