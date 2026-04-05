@@ -11,6 +11,7 @@ import {
 import type { Board, Task } from '../types'
 import { ColumnCard } from './ColumnCard'
 import { AddColumnForm } from './AddColumnForm'
+import { TaskDrawer } from './TaskDrawer'
 import { api } from '../api'
 
 function sortTasksForColumn(tasks: Task[], _columnId: string, _columnKind: 'system' | 'custom', systemKey?: string): Task[] {
@@ -56,6 +57,25 @@ interface BoardViewProps {
 export function BoardView({ board, onRefresh }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [showAddColumn, setShowAddColumn] = useState(false)
+  const [drawerState, setDrawerState] = useState<{
+    open: boolean
+    mode: 'create' | 'edit'
+    task?: Task
+    initialTitle?: string
+    columnId?: string
+  }>({ open: false, mode: 'create', columnId: undefined })
+
+  function openDrawerForCreate(columnId: string, initialTitle?: string) {
+    setDrawerState({ open: true, mode: 'create', columnId, initialTitle })
+  }
+
+  function openDrawerForEdit(task: Task) {
+    setDrawerState({ open: true, mode: 'edit', task })
+  }
+
+  function closeDrawer() {
+    setDrawerState(s => ({ ...s, open: false }))
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -94,6 +114,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
   }
 
   return (
+    <>
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
@@ -116,7 +137,10 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
                 column={column}
                 tasks={columnTasks}
                 onRefresh={onRefresh}
-                onOpenDrawer={() => {}}
+                onOpenDrawer={(task, initialTitle) => {
+                  if (task) openDrawerForEdit(task)
+                  else openDrawerForCreate(column.id, initialTitle)
+                }}
               />
             )
           })}
@@ -143,5 +167,17 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         ) : null}
       </DragOverlay>
     </DndContext>
+
+    {drawerState.open && drawerState.columnId && (
+      <TaskDrawer
+        mode={drawerState.mode}
+        task={drawerState.task}
+        initialTitle={drawerState.initialTitle}
+        columnId={drawerState.columnId}
+        onClose={closeDrawer}
+        onSaved={() => { onRefresh() }}
+      />
+    )}
+    </>
   )
 }
