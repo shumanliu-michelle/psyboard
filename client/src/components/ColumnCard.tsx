@@ -67,7 +67,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
     >
       {column.kind === 'custom' ? (
       <div className="column-header" ref={menuRef} style={{ position: 'relative' }}>
-        <div {...columnAttributes} {...columnListeners} style={{ cursor: 'grab', touchAction: 'none', display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        <div {...columnAttributes} {...columnListeners} style={{ width: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab', touchAction: 'none' }}>
           <GripIcon />
         </div>
         {renaming ? (
@@ -161,7 +161,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
       </div>
     ) : (
       <div className="column-header">
-        <div {...columnAttributes} {...columnListeners} style={{ cursor: 'grab', touchAction: 'none', display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        <div {...columnAttributes} {...columnListeners} style={{ width: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab', touchAction: 'none' }}>
           <GripIcon />
         </div>
         <h3 style={{ flex: 1 }}>{column.title}</h3>
