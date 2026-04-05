@@ -127,7 +127,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
       </div>
       <div style={{
         position: 'absolute',
-        top: 8,
+        bottom: 36,
         right: 8,
         display: 'flex',
         flexDirection: 'column',
