@@ -101,22 +101,20 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
       ref={setNodeRef}
       style={{
         ...style,
-        position: 'relative',
+        display: 'flex',
+        flexDirection: 'row',
         borderLeft: task.priority ? `3px solid ${priorityColor}` : undefined,
       }}
       className={`task-card${isDragging ? ' dragging' : ''}`}
       onClick={() => onOpenEdit()}
     >
+      {/* Left: drag handler — full height */}
       <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        bottom: 0,
         width: 28,
+        flexShrink: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 5,
         cursor: 'grab',
         touchAction: 'none',
       }}
@@ -125,15 +123,51 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
       >
         <GripIcon />
       </div>
+
+      {/* Middle: title + description — fills remaining width, centered */}
       <div style={{
-        position: 'absolute',
-        bottom: 36,
-        right: 8,
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        zIndex: 5,
+        justifyContent: 'center',
+        minWidth: 0,
       }}>
+        <div className="task-card-title" style={{ paddingLeft: 4 }} onDoubleClick={() => onOpenEdit()}>
+          {task.title}
+        </div>
+        {task.description && (
+          <div style={{ paddingLeft: 4, marginTop: 6, fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {task.description}
+          </div>
+        )}
+      </div>
+
+      {/* Right: kebab + assignee — full height, right-aligned */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        gap: 4,
+        paddingRight: 4,
+        flexShrink: 0,
+      }}>
+        {task.assignee && (
+          <span style={{
+            background: task.assignee === 'SL' ? '#d1fae5' : '#dbeafe',
+            color: task.assignee === 'SL' ? '#065f46' : '#1e40af',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            fontSize: 11,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {task.assignee}
+          </span>
+        )}
         <button
           onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}
@@ -144,8 +178,9 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         {showMenu && (
           <div ref={popoverRef} style={{
             position: 'absolute',
-            top: 24,
-            right: 0,
+            top: '50%',
+            right: 32,
+            transform: 'translateY(-50%)',
             background: 'white',
             border: '1px solid #e5e7eb',
             borderRadius: 6,
@@ -235,36 +270,6 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
           </div>
         )}
       </div>
-      <div className="task-card-title" style={{ paddingLeft: 32, paddingRight: 40 }} onDoubleClick={() => onOpenEdit()}>
-        {task.title}
-      </div>
-      {task.description && (
-        <div style={{ paddingLeft: 32, paddingRight: 40, marginTop: 6, fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {task.description}
-        </div>
-      )}
-      {task.assignee && (
-        <div style={{
-          position: 'absolute',
-          bottom: 8,
-          right: 8,
-        }}>
-          <span style={{
-            background: task.assignee === 'SL' ? '#d1fae5' : '#dbeafe',
-            color: task.assignee === 'SL' ? '#065f46' : '#1e40af',
-            borderRadius: '50%',
-            width: 24,
-            height: 24,
-            fontSize: 11,
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            {task.assignee}
-          </span>
-        </div>
-      )}
     </div>
   )
 }
