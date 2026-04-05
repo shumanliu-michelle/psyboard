@@ -22,7 +22,7 @@ describe('TaskDrawer — create mode', () => {
   it('renders with title input and all fields', () => {
     render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
     expect(screen.getByPlaceholderText('Task title')).toBeTruthy()
-    expect(screen.getByText('Notes')).toBeTruthy()
+    expect(screen.getByText('Description')).toBeTruthy()
     expect(screen.getByText('Do date')).toBeTruthy()
     expect(screen.getByText('Due date')).toBeTruthy()
     expect(screen.getByText('Priority')).toBeTruthy()
@@ -110,13 +110,13 @@ describe('TaskDrawer — edit mode', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('save does NOT close drawer (stays open for further edits)', async () => {
+  it('save closes drawer after successful edit', async () => {
     vi.mocked(api.updateTask).mockResolvedValue(mockTask)
     const onClose = vi.fn()
     render(<TaskDrawer mode="edit" task={mockTask} columnId="col-backlog" onClose={onClose} onSaved={() => {}} />)
     fireEvent.change(screen.getByPlaceholderText('Task title'), { target: { value: 'Updated' } })
     fireEvent.click(screen.getByText('Save'))
     await new Promise(r => setTimeout(r, 0))
-    expect(onClose).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 })

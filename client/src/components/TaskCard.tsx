@@ -6,6 +6,7 @@ import { api } from '../api'
 
 interface TaskCardProps {
   task: Task
+  onUpdated: () => void
   onDeleted: () => void
   onOpenEdit: () => void
 }
@@ -29,8 +30,9 @@ export const KebabIcon = () => (
   </svg>
 )
 
-export function TaskCard({ task, onDeleted, onOpenEdit }: TaskCardProps) {
+export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardProps) {
   const [showMenu, setShowMenu] = useState(false)
+  const [menuMode, setMenuMode] = useState<'main' | 'assign' | 'priority'>('main')
   const popoverRef = useRef<HTMLDivElement>(null)
 
   // Close menu on click outside
@@ -40,6 +42,7 @@ export function TaskCard({ task, onDeleted, onOpenEdit }: TaskCardProps) {
       const menuEl = popoverRef.current
       if (menuEl && !menuEl.contains(e.target as Node)) {
         setShowMenu(false)
+        setMenuMode('main')
       }
     }
     document.addEventListener('mousedown', handler)
@@ -66,6 +69,28 @@ export function TaskCard({ task, onDeleted, onOpenEdit }: TaskCardProps) {
       onDeleted()
     } catch (err) {
       console.error('Failed to delete task:', err)
+    }
+  }
+
+  async function handleQuickAssign(assignee: 'SL' | 'KL' | null) {
+    try {
+      await api.updateTask(task.id, { assignee })
+      onUpdated()
+      setShowMenu(false)
+      setMenuMode('main')
+    } catch (err) {
+      console.error('Failed to assign:', err)
+    }
+  }
+
+  async function handleQuickPriority(priority: 'low' | 'medium' | 'high' | null) {
+    try {
+      await api.updateTask(task.id, { priority: priority ?? undefined })
+      onUpdated()
+      setShowMenu(false)
+      setMenuMode('main')
+    } catch (err) {
+      console.error('Failed to set priority:', err)
     }
   }
 
@@ -121,29 +146,86 @@ export function TaskCard({ task, onDeleted, onOpenEdit }: TaskCardProps) {
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             padding: 4,
             zIndex: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
             minWidth: 90,
           }}>
-            <button
-              onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
-              style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-            >
-              Assign
-            </button>
-            <button
-              onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
-              style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-            >
-              Edit
-            </button>
-            <button
-              onClick={e => { e.stopPropagation(); setShowMenu(false); handleDelete() }}
-              style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
-            >
-              Delete
-            </button>
+            {menuMode === 'main' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuMode('assign') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                >
+                  Assign
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuMode('priority') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                >
+                  Priority
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setShowMenu(false); handleDelete() }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+            {menuMode === 'assign' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <button
+                  onClick={e => { e.stopPropagation(); handleQuickAssign('SL') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: task.assignee === 'SL' ? '#065f46' : '#374151', fontWeight: task.assignee === 'SL' ? 600 : 400 }}
+                >
+                  SL
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleQuickAssign('KL') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: task.assignee === 'KL' ? '#1e40af' : '#374151', fontWeight: task.assignee === 'KL' ? 600 : 400 }}
+                >
+                  KL
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleQuickAssign(null) }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#6b7280' }}
+                >
+                  None
+                </button>
+              </div>
+            )}
+            {menuMode === 'priority' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <button
+                  onClick={e => { e.stopPropagation(); handleQuickPriority('low') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: task.priority === 'low' ? '#065f46' : '#374151', fontWeight: task.priority === 'low' ? 600 : 400 }}
+                >
+                  Low
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleQuickPriority('medium') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: task.priority === 'medium' ? '#92400e' : '#374151', fontWeight: task.priority === 'medium' ? 600 : 400 }}
+                >
+                  Med
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleQuickPriority('high') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: task.priority === 'high' ? '#dc2626' : '#374151', fontWeight: task.priority === 'high' ? 600 : 400 }}
+                >
+                  High
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleQuickPriority(null) }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#6b7280' }}
+                >
+                  None
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -161,6 +243,20 @@ export function TaskCard({ task, onDeleted, onOpenEdit }: TaskCardProps) {
             fontWeight: 500,
           }}>
             {task.assignee}
+          </span>
+        </div>
+      )}
+      {task.priority && (
+        <div style={{ marginTop: 4, paddingLeft: 28 }}>
+          <span style={{
+            background: task.priority === 'high' ? '#fee2e2' : task.priority === 'medium' ? '#fef3c7' : '#d1fae5',
+            color: task.priority === 'high' ? '#991b1b' : task.priority === 'medium' ? '#92400e' : '#065f46',
+            borderRadius: 4,
+            padding: '2px 6px',
+            fontSize: 11,
+            fontWeight: 500,
+          }}>
+            {task.priority === 'high' ? '↑ High' : task.priority === 'medium' ? '→ Med' : '↓ Low'}
           </span>
         </div>
       )}

@@ -144,6 +144,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
             <TaskCard
               key={task.id}
               task={task}
+              onUpdated={onRefresh}
               onDeleted={onRefresh}
               onOpenEdit={() => onOpenDrawer(task)}
             />

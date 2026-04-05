@@ -25,8 +25,8 @@ export function TaskDrawer({
   const [title, setTitle] = useState(() =>
     mode === 'edit' && task ? task.title : initialTitle
   )
-  const [notes, setNotes] = useState(() =>
-    mode === 'edit' && task ? task.notes ?? '' : ''
+  const [description, setDescription] = useState(() =>
+    mode === 'edit' && task ? task.description ?? '' : ''
   )
   const [doDate, setDoDate] = useState(() =>
     mode === 'edit' && task ? task.doDate ?? '' : ''
@@ -73,15 +73,15 @@ export function TaskDrawer({
         await api.createTask({
           title: title.trim(),
           columnId,
-          notes: notes.trim() || undefined,
+          description: description.trim() || undefined,
           doDate: doDate || undefined,
           dueDate: dueDate || undefined,
           priority,
         })
-        onClose() // Close drawer after create to prevent duplicate saves
       } else if (task) {
         await api.updateTask(task.id, {
           title: title.trim(),
+          description: description.trim() || undefined,
           doDate: doDate || undefined,
           dueDate: dueDate || undefined,
           priority,
@@ -89,6 +89,7 @@ export function TaskDrawer({
         })
       }
       onSaved()
+      onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save task')
     } finally {
@@ -167,12 +168,12 @@ export function TaskDrawer({
           </div>
 
           <div className="task-drawer-field">
-            <label htmlFor="task-notes">Notes</label>
+            <label htmlFor="task-description">Description</label>
             <textarea
-              id="task-notes"
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Add notes..."
+              id="task-description"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Add description..."
             />
           </div>
 
@@ -260,20 +261,27 @@ export function TaskDrawer({
             <button
               className="btn-save"
               onClick={handleSave}
-              disabled={!canSave}
+              disabled={!canSave || (mode === 'edit' && task?.columnId === DONE_COLUMN_ID)}
             >
               {saving ? 'Saving...' : 'Save'}
             </button>
-            <button className="btn-cancel" onClick={onClose}>
+            <button className="btn-cancel" onClick={onClose} disabled={mode === 'edit' && task?.columnId === DONE_COLUMN_ID}>
               Cancel
             </button>
           </div>
 
-          {mode === 'edit' && task && (
+          {mode === 'edit' && task && task.columnId !== DONE_COLUMN_ID && (
             <div className="text-actions">
               <button className="btn-text" onClick={handleMarkDone}>
                 Mark done
               </button>
+              <button className="btn-text danger" onClick={handleDelete}>
+                Delete task
+              </button>
+            </div>
+          )}
+          {mode === 'edit' && task && task.columnId === DONE_COLUMN_ID && (
+            <div className="text-actions">
               <button className="btn-text danger" onClick={handleDelete}>
                 Delete task
               </button>
