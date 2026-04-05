@@ -211,8 +211,8 @@ export function createTask(
   title: string,
   columnId: string,
   description?: string,
-  doDate?: string,
-  dueDate?: string,
+  doDate?: string | null,
+  dueDate?: string | null,
   priority?: 'low' | 'medium' | 'high'
 ): Task {
   const board = readBoard()

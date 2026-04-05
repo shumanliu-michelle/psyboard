@@ -84,8 +84,8 @@ export function TaskDrawer({
         await api.updateTask(task.id, {
           title: title.trim(),
           description: description.trim() || undefined,
-          doDate: doDate || undefined,
-          dueDate: dueDate || undefined,
+          doDate: doDate || null,
+          dueDate: dueDate || null,
           priority,
           assignee: assignee ?? null,
         })

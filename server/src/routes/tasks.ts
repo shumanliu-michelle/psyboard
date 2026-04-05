@@ -43,9 +43,9 @@ router.post('/', (req, res) => {
     const task = createTask(
       title.trim(),
       columnId,
-      description?.trim(),
-      doDate?.trim() || undefined,
-      dueDate?.trim() || undefined,
+      description?.trim() || undefined,
+      doDate?.trim() || null,
+      dueDate?.trim() || null,
       priority
     )
     res.status(201).json(task)

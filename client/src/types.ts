@@ -28,8 +28,8 @@ export type Task = {
   columnId: string
   order: number
 
-  doDate?: string
-  dueDate?: string
+  doDate?: string | null
+  dueDate?: string | null
   priority?: TaskPriority
   assignee?: 'SL' | 'KL'
 
@@ -50,8 +50,8 @@ export type CreateTaskInput = {
   title: string
   columnId: string
   description?: string
-  doDate?: string
-  dueDate?: string
+  doDate?: string | null
+  dueDate?: string | null
   priority?: TaskPriority
 }
 export type UpdateTaskInput = {
@@ -60,8 +60,8 @@ export type UpdateTaskInput = {
   columnId?: string
   order?: number
   assignee?: 'SL' | 'KL' | null
-  doDate?: string
-  dueDate?: string
+  doDate?: string | null
+  dueDate?: string | null
   priority?: TaskPriority
   completedAt?: string
   manualOrder?: number
