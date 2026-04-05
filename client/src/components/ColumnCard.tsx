@@ -24,6 +24,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
   const {
   attributes: columnAttributes,
   listeners: columnListeners,
+  setNodeRef: setColumnRef,
   transform: columnTransform,
   transition: columnTransition,
   isDragging: isColumnDragging,
@@ -44,6 +45,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
 
   return (
     <div
+      ref={setColumnRef}
       className="column"
       style={{
         background: isOver ? '#dde' : undefined,
