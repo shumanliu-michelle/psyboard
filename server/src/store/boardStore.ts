@@ -4,10 +4,15 @@ import { fileURLToPath } from 'url'
 import { randomUUID } from 'crypto'
 import type { Board, Column, Task, UpdateTaskInput, SystemKey } from '../types.js'
 import { BACKLOG_COLUMN_ID, TODAY_COLUMN_ID, DONE_COLUMN_ID, ColumnKind } from '../types.js'
+import { reconcileBoard } from './reconciliation.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, '..', '..', 'data')
 const BOARD_FILE = path.join(DATA_DIR, 'board.json')
+
+function getTodayString(): string {
+  return new Date().toISOString().split('T')[0] // YYYY-MM-DD
+}
 
 const SYSTEM_COLUMNS: Column[] = [
   { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system' as ColumnKind, systemKey: 'backlog' as SystemKey, position: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
@@ -35,7 +40,8 @@ export function readBoard(): Board {
   try {
     const raw = fs.readFileSync(BOARD_FILE, 'utf-8')
     const board = JSON.parse(raw) as Board
-    return migrateAndHeal(board)
+    const healed = migrateAndHeal(board)
+    return healed
   } catch {
     const board = DEFAULT_BOARD
     writeBoard(board)
@@ -85,6 +91,13 @@ function migrateAndHeal(board: Board): Board {
     columns: allColumns,
     tasks: board.tasks ?? [],
   }
+
+  // Reconciliation: promote any date-eligible tasks from Backlog to Today
+  const promoted_readBoard = reconcileBoard(healedBoard, getTodayString())
+  if (promoted_readBoard.length > 0) {
+    console.log(`Reconciled ${promoted_readBoard.length} task(s) to Today`)
+  }
+
   writeBoard(healedBoard)
   return healedBoard
 }
@@ -194,7 +207,14 @@ export function reorderColumns(columnIds: string[]): Column[] {
 }
 
 // Task operations
-export function createTask(title: string, columnId: string, description?: string): Task {
+export function createTask(
+  title: string,
+  columnId: string,
+  description?: string,
+  doDate?: string,
+  dueDate?: string,
+  priority?: 'low' | 'medium' | 'high'
+): Task {
   const board = readBoard()
   const tasksInColumn = board.tasks.filter(t => t.columnId === columnId)
   const now = new Date().toISOString()
@@ -204,30 +224,77 @@ export function createTask(title: string, columnId: string, description?: string
     description,
     columnId,
     order: tasksInColumn.length,
+    doDate,
+    dueDate,
+    priority,
     createdAt: now,
     updatedAt: now,
   }
   board.tasks.push(task)
+
+  // Reconciliation: promote any date-eligible tasks from Backlog to Today
+  const promoted_createTask = reconcileBoard(board, getTodayString())
+  if (promoted_createTask.length > 0) {
+    console.log(`Reconciled ${promoted_createTask.length} task(s) to Today`)
+  }
+
   writeBoard(board)
   return task
 }
 
-export function updateTask(id: string, updates: UpdateTaskInput): Task {
+export function updateTask(id: string, updates: {
+  title?: string
+  description?: string
+  columnId?: string
+  order?: number
+  assignee?: 'SL' | 'KL' | null
+  doDate?: string
+  dueDate?: string
+  priority?: 'low' | 'medium' | 'high'
+  completedAt?: string
+  manualOrder?: number
+}): Task {
   const board = readBoard()
   const task = board.tasks.find(t => t.id === id)
   if (!task) {
     throw new Error(`Task not found: ${id}`)
   }
-  // If moving to a different column, reorder
-  if (updates.columnId && updates.columnId !== task.columnId) {
+
+  const previousColumnId = task.columnId
+
+  // Handle columnId change
+  if (updates.columnId !== undefined && updates.columnId !== task.columnId) {
     task.columnId = updates.columnId
     task.order = board.tasks.filter(t => t.columnId === updates.columnId).length
   }
+
+  // Auto-set completedAt when moving to Done
+  if (task.columnId === DONE_COLUMN_ID && previousColumnId !== DONE_COLUMN_ID) {
+    task.completedAt = new Date().toISOString()
+  }
+
+  // Auto-clear completedAt when moving out of Done
+  if (previousColumnId === DONE_COLUMN_ID && task.columnId !== DONE_COLUMN_ID) {
+    task.completedAt = undefined
+  }
+
   if (updates.title !== undefined) task.title = updates.title
   if (updates.description !== undefined) task.description = updates.description
   if (updates.order !== undefined) task.order = updates.order
   if (updates.assignee !== undefined) task.assignee = updates.assignee === null ? undefined : updates.assignee
+  if (updates.doDate !== undefined) task.doDate = updates.doDate
+  if (updates.dueDate !== undefined) task.dueDate = updates.dueDate
+  if (updates.priority !== undefined) task.priority = updates.priority
+  if (updates.completedAt !== undefined) task.completedAt = updates.completedAt
+  if (updates.manualOrder !== undefined) task.manualOrder = updates.manualOrder
   task.updatedAt = new Date().toISOString()
+
+  // Reconciliation: promote any date-eligible tasks from Backlog to Today
+  const promoted_updateTask = reconcileBoard(board, getTodayString())
+  if (promoted_updateTask.length > 0) {
+    console.log(`Reconciled ${promoted_updateTask.length} task(s) to Today`)
+  }
+
   writeBoard(board)
   return task
 }
