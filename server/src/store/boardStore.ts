@@ -294,16 +294,9 @@ export function updateTask(id: string, updates: {
   task.updatedAt = new Date().toISOString()
 
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
-  const today = getTodayString()
-  const promoted_updateTask = reconcileBoard(board, today)
+  const promoted_updateTask = reconcileBoard(board, getTodayString())
   if (promoted_updateTask.length > 0) {
-    console.log(`[reconcile] ${today}: promoted ${promoted_updateTask.length} task(s):`, promoted_updateTask.map(pt => ({ id: pt.id, columnId: pt.columnId, doDate: pt.doDate, dueDate: pt.dueDate })))
-  } else {
-    // Find the task and log its state
-    const taskForLog = board.tasks.find(tx => tx.id === id)
-    if (taskForLog) {
-      console.log(`[reconcile] ${today}: task ${taskForLog.id} NOT promoted. columnId=${taskForLog.columnId} doDate=${taskForLog.doDate} dueDate=${taskForLog.dueDate}`)
-    }
+    console.log(`Reconciled ${promoted_updateTask.length} task(s) to Today`)
   }
 
   writeBoard(board)

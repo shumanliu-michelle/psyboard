@@ -63,7 +63,9 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [showAddColumn, setShowAddColumn] = useState(false)
   const [blockedDrag, setBlockedDrag] = useState<{ task: Task; targetColumnId: string } | null>(null)
-  const [blockedDragDate, setBlockedDragDate] = useState('')
+  const [blockedDragDoDate, setBlockedDragDoDate] = useState('')
+  const [blockedDragDueDate, setBlockedDragDueDate] = useState('')
+  const [blockedDragDateError, setBlockedDragDateError] = useState('')
   const [drawerState, setDrawerState] = useState<{
     open: boolean
     mode: 'create' | 'edit'
@@ -114,10 +116,16 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     // If dropped on a column (empty area)
     if (board.columns.find(c => c.id === targetColumnId)) {
       if (task.columnId !== targetColumnId) {
-        // Block moving out of Today if doDate is today
-        if (task.columnId === TODAY_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID && task.doDate === getToday()) {
+        // Block moving out of Today if it would be immediately reconcile-promoted back
+        const today = getToday()
+        const wouldReconcile =
+          (task.columnId === TODAY_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID) &&
+          (task.doDate === today || (task.doDate == null && task.dueDate != null && task.dueDate <= today))
+        if (wouldReconcile) {
           setBlockedDrag({ task, targetColumnId })
-          setBlockedDragDate('')
+          setBlockedDragDoDate(task.doDate ?? '')
+          setBlockedDragDueDate(task.dueDate ?? '')
+          setBlockedDragDateError('')
           return
         }
         // Move to new column
@@ -126,12 +134,38 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     }
   }
 
+  function validateBlockedDates() {
+    if (blockedDragDoDate && blockedDragDueDate && blockedDragDueDate < blockedDragDoDate) {
+      setBlockedDragDateError('Due date cannot be earlier than do date.')
+    } else {
+      setBlockedDragDateError('')
+    }
+  }
+
   async function confirmBlockedDrag() {
     if (!blockedDrag) return
     const { task, targetColumnId } = blockedDrag
-    // Update doDate to the new date (if set) then move
+
+    // Validate doDate <= dueDate
+    if (blockedDragDoDate && blockedDragDueDate && blockedDragDueDate < blockedDragDoDate) {
+      setBlockedDragDateError('Due date cannot be earlier than do date.')
+      return
+    }
+
     await api.updateTask(task.id, {
-      doDate: blockedDragDate || null,
+      doDate: blockedDragDoDate || null,
+      dueDate: blockedDragDueDate || null,
+      columnId: targetColumnId,
+    }).catch(console.error)
+    setBlockedDrag(null)
+    onRefresh()
+  }
+      return
+    }
+
+    await api.updateTask(task.id, {
+      doDate: blockedDragDoDate || null,
+      dueDate: blockedDragDueDate || null,
       columnId: targetColumnId,
     }).catch(console.error)
     setBlockedDrag(null)
@@ -213,17 +247,29 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
           </div>
           <div className="task-drawer-body">
             <p style={{ fontSize: 14, color: '#374151', marginBottom: 16 }}>
-              <strong>"{blockedDrag.task.title}"</strong> has a doDate of today. It cannot be moved to another column until the doDate is changed.
+              <strong>"{blockedDrag.task.title}"</strong> has a doDate of today. To move it, please update the dates below.
             </p>
-            <div className="task-drawer-field">
-              <label htmlFor="blocked-do-date">New do date</label>
-              <input
-                id="blocked-do-date"
-                type="date"
-                value={blockedDragDate}
-                onChange={e => setBlockedDragDate(e.target.value)}
-              />
+            <div className="task-drawer-row">
+              <div className="task-drawer-field">
+                <label htmlFor="blocked-do-date">Do date</label>
+                <input
+                  id="blocked-do-date"
+                  type="date"
+                  value={blockedDragDoDate}
+                  onChange={e => { setBlockedDragDoDate(e.target.value); validateBlockedDates() }}
+                />
+              </div>
+              <div className="task-drawer-field">
+                <label htmlFor="blocked-due-date">Due date</label>
+                <input
+                  id="blocked-due-date"
+                  type="date"
+                  value={blockedDragDueDate}
+                  onChange={e => { setBlockedDragDueDate(e.target.value); validateBlockedDates() }}
+                />
+              </div>
             </div>
+            {blockedDragDateError && <p className="drawer-error">{blockedDragDateError}</p>}
           </div>
           <div className="task-drawer-actions">
             <div className="primary-actions">
