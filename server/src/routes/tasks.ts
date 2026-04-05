@@ -5,7 +5,7 @@ import type { CreateTaskInput, UpdateTaskInput } from '../types.js'
 const router = Router()
 
 router.post('/', (req, res) => {
-  const { title, columnId, description, doDate, dueDate, priority } = req.body as CreateTaskInput
+  const { title, columnId, description, doDate, dueDate, priority, assignee } = req.body as CreateTaskInput
 
   // Validate
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
@@ -31,6 +31,12 @@ router.post('/', (req, res) => {
     return
   }
 
+  // Validate assignee
+  if (assignee !== undefined && assignee !== null && !['SL', 'KL'].includes(assignee)) {
+    res.status(400).json({ error: 'assignee must be SL, KL, or null' })
+    return
+  }
+
   // Verify column exists
   const board = readBoard()
   const column = board.columns.find(c => c.id === columnId)
@@ -46,7 +52,8 @@ router.post('/', (req, res) => {
       description?.trim() || undefined,
       doDate?.trim() || null,
       dueDate?.trim() || null,
-      priority
+      priority,
+      assignee
     )
     res.status(201).json(task)
   } catch (err) {

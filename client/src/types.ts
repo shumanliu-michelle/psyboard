@@ -53,6 +53,7 @@ export type CreateTaskInput = {
   doDate?: string | null
   dueDate?: string | null
   priority?: TaskPriority
+  assignee?: 'SL' | 'KL' | null
 }
 export type UpdateTaskInput = {
   title?: string

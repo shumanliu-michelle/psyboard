@@ -231,7 +231,8 @@ export function createTask(
   description?: string,
   doDate?: string | null,
   dueDate?: string | null,
-  priority?: 'low' | 'medium' | 'high'
+  priority?: 'low' | 'medium' | 'high',
+  assignee?: 'SL' | 'KL'
 ): Task {
   const board = readBoard()
   const tasksInColumn = board.tasks.filter(t => t.columnId === columnId)
@@ -245,6 +246,7 @@ export function createTask(
     doDate,
     dueDate,
     priority,
+    assignee,
     createdAt: now,
     updatedAt: now,
   }
