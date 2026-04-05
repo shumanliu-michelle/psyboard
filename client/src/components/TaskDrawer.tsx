@@ -79,6 +79,7 @@ export function TaskDrawer({
           doDate: doDate || undefined,
           dueDate: dueDate || undefined,
           priority,
+          assignee,
         })
       } else if (task) {
         await api.updateTask(task.id, {

@@ -57,6 +57,18 @@ describe('TaskDrawer — create mode', () => {
     })
   })
 
+  it('passes assignee to createTask when set', async () => {
+    vi.mocked(api.createTask).mockResolvedValue({ id: 'new-1' } as Task)
+    render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    fireEvent.change(screen.getByPlaceholderText('Task title'), { target: { value: 'Task with assignee' } })
+    // Click SL assignee button
+    fireEvent.click(screen.getByRole('button', { name: 'SL' }))
+    fireEvent.click(screen.getByText('Save'))
+    await vi.waitFor(() => {
+      expect(vi.mocked(api.createTask)).toHaveBeenCalledWith(expect.objectContaining({ assignee: 'SL' }))
+    })
+  })
+
   it('closes drawer after successful create (prevents duplicate saves)', async () => {
     vi.mocked(api.createTask).mockResolvedValue({ id: 'new-1' } as Task)
     const onClose = vi.fn()

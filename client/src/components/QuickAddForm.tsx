@@ -66,7 +66,11 @@ export function QuickAddForm({ columnId, onExpandToDrawer, onRefresh }: QuickAdd
         <button
           type="button"
           onClick={() => {
-            if (title.trim()) onExpandToDrawer(title.trim())
+            if (title.trim()) {
+              const t = title.trim()
+              setTitle('')
+              onExpandToDrawer(t)
+            }
           }}
           style={{
             padding: '7px 12px',

@@ -59,6 +59,14 @@ describe('QuickAddForm', () => {
     expect(expand).toHaveBeenCalledWith('My task')
   })
 
+  it('clears input when More fields is clicked', () => {
+    const expand = vi.fn()
+    render(<QuickAddForm columnId="col-backlog" onExpandToDrawer={expand} />)
+    fireEvent.change(screen.getByPlaceholderText('Task title'), { target: { value: 'My task' } })
+    fireEvent.click(screen.getByText('More fields'))
+    expect((screen.getByPlaceholderText('Task title') as HTMLInputElement).value).toBe('')
+  })
+
   it('does NOT call onExpandToDrawer when More fields is clicked with empty title', () => {
     const expand = vi.fn()
     render(<QuickAddForm columnId="col-backlog" onExpandToDrawer={expand} />)
