@@ -19,15 +19,25 @@ export const BACKLOG_COLUMN_ID = 'col-backlog'
 export const TODAY_COLUMN_ID  = 'col-today'
 export const DONE_COLUMN_ID   = 'col-done'
 
+export type TaskPriority = 'low' | 'medium' | 'high'
+
 export type Task = {
   id: string
   title: string
   description?: string
   columnId: string
   order: number
+
+  doDate?: string
+  dueDate?: string
+  priority?: TaskPriority
+  assignee?: 'SL' | 'KL'
+
+  manualOrder?: number
+
   createdAt: string
   updatedAt: string
-  assignee?: 'SL' | 'KL'
+  completedAt?: string
 }
 
 export type Board = {
@@ -36,11 +46,23 @@ export type Board = {
 }
 
 export type CreateColumnInput = { title: string }
-export type CreateTaskInput = { title: string; columnId: string; description?: string }
+export type CreateTaskInput = {
+  title: string
+  columnId: string
+  description?: string
+  doDate?: string
+  dueDate?: string
+  priority?: TaskPriority
+}
 export type UpdateTaskInput = {
   title?: string
   description?: string
   columnId?: string
   order?: number
   assignee?: 'SL' | 'KL' | null
+  doDate?: string
+  dueDate?: string
+  priority?: TaskPriority
+  completedAt?: string
+  manualOrder?: number
 }

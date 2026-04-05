@@ -13,6 +13,41 @@ import { ColumnCard } from './ColumnCard'
 import { AddColumnForm } from './AddColumnForm'
 import { api } from '../api'
 
+function sortTasksForColumn(tasks: Task[], _columnId: string, _columnKind: 'system' | 'custom', systemKey?: string): Task[] {
+  if (systemKey === 'backlog') {
+    return [...tasks].sort((a, b) => {
+      // 1. doDate ascending (earliest first)
+      if (a.doDate && b.doDate) {
+        if (a.doDate !== b.doDate) return a.doDate.localeCompare(b.doDate)
+      } else if (a.doDate) return -1
+      else if (b.doDate) return 1
+      // 2. dueDate ascending as fallback
+      if (a.dueDate && b.dueDate) {
+        if (a.dueDate !== b.dueDate) return a.dueDate.localeCompare(b.dueDate)
+      } else if (a.dueDate) return -1
+      else if (b.dueDate) return 1
+      // 3. Neither date — by createdAt
+      return a.createdAt.localeCompare(b.createdAt)
+    })
+  }
+  if (systemKey === 'done') {
+    return [...tasks].sort((a, b) => {
+      if (!a.completedAt && !b.completedAt) return 0
+      if (!a.completedAt) return 1
+      if (!b.completedAt) return -1
+      return b.completedAt.localeCompare(a.completedAt) // descending (most recent first)
+    })
+  }
+  // Today and custom columns — sort by manualOrder, then order as fallback
+  return [...tasks].sort((a, b) => {
+    if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
+      return a.manualOrder - b.manualOrder
+    } else if (a.manualOrder !== undefined) return -1
+    else if (b.manualOrder !== undefined) return 1
+    return a.order - b.order
+  })
+}
+
 interface BoardViewProps {
   board: Board
   onRefresh: () => void
@@ -69,9 +104,12 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
           .slice()
           .sort((a, b) => a.position - b.position)
           .map(column => {
-            const columnTasks = board.tasks
-              .filter(t => t.columnId === column.id)
-              .sort((a, b) => a.order - b.order)
+            const columnTasks = sortTasksForColumn(
+              board.tasks.filter(t => t.columnId === column.id),
+              column.id,
+              column.kind,
+              column.systemKey
+            )
             return (
               <ColumnCard
                 key={column.id}
