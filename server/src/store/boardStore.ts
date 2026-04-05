@@ -93,7 +93,10 @@ function migrateAndHeal(board: Board): Board {
   }
 
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
-  reconcileBoard(healedBoard, getTodayString())
+  const promoted_readBoard = reconcileBoard(healedBoard, getTodayString())
+  if (promoted_readBoard.length > 0) {
+    console.log(`Reconciled ${promoted_readBoard.length} task(s) to Today`)
+  }
 
   writeBoard(healedBoard)
   return healedBoard
@@ -230,7 +233,10 @@ export function createTask(
   board.tasks.push(task)
 
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
-  reconcileBoard(board, getTodayString())
+  const promoted_createTask = reconcileBoard(board, getTodayString())
+  if (promoted_createTask.length > 0) {
+    console.log(`Reconciled ${promoted_createTask.length} task(s) to Today`)
+  }
 
   writeBoard(board)
   return task
@@ -284,7 +290,10 @@ export function updateTask(id: string, updates: {
   task.updatedAt = new Date().toISOString()
 
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
-  reconcileBoard(board, getTodayString())
+  const promoted_updateTask = reconcileBoard(board, getTodayString())
+  if (promoted_updateTask.length > 0) {
+    console.log(`Reconciled ${promoted_updateTask.length} task(s) to Today`)
+  }
 
   writeBoard(board)
   return task

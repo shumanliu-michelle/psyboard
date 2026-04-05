@@ -28,54 +28,54 @@ describe('reconcileBoard', () => {
   it('does not promote task with doDate in the future', () => {
     const board = makeBoard([{ id: 't1', doDate: '2026-04-10', columnId: BACKLOG_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toBeNull()
+    expect(result).toEqual([])
   })
 
   it('promotes task with doDate <= today from Backlog', () => {
     const board = makeBoard([{ id: 't1', doDate: '2026-04-05', columnId: BACKLOG_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
+    expect(result).toContainEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
   })
 
   it('promotes task with doDate < today from Backlog', () => {
     const board = makeBoard([{ id: 't1', doDate: '2026-04-01', columnId: BACKLOG_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
+    expect(result).toContainEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
   })
 
   it('promotes task with dueDate <= today when doDate is absent', () => {
     const board = makeBoard([{ id: 't1', dueDate: '2026-04-05', columnId: BACKLOG_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
+    expect(result).toContainEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
   })
 
   it('does not promote task with dueDate > today and no doDate', () => {
     const board = makeBoard([{ id: 't1', dueDate: '2026-04-10', columnId: BACKLOG_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toBeNull()
+    expect(result).toEqual([])
   })
 
   it('skips task already in Today', () => {
     const board = makeBoard([{ id: 't1', doDate: '2026-04-01', columnId: TODAY_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toBeNull()
+    expect(result).toEqual([])
   })
 
   it('skips task already in Done', () => {
     const board = makeBoard([{ id: 't1', doDate: '2026-04-01', columnId: DONE_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toBeNull()
+    expect(result).toEqual([])
   })
 
   it('skips task with no dates in Backlog', () => {
     const board = makeBoard([{ id: 't1', columnId: BACKLOG_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toBeNull()
+    expect(result).toEqual([])
   })
 
   it('prefers doDate over dueDate when both are present and doDate is eligible', () => {
     const board = makeBoard([{ id: 't1', doDate: '2026-04-01', dueDate: '2026-04-10', columnId: BACKLOG_COLUMN_ID }])
     const result = reconcileBoard(board, today)
-    expect(result).toEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
+    expect(result).toContainEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
   })
 })

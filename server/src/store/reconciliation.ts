@@ -27,17 +27,17 @@ export function reconcileTask(task: Task, today: string): Task | null {
 
 /**
  * Reconciles all tasks in the board.
- * Returns the promoted task or null if none were promoted.
+ * Returns an array of all promoted tasks (empty array if none).
  * Does NOT persist — caller is responsible for writing the board.
  */
-export function reconcileBoard(board: Board, today: string): Task | null {
+export function reconcileBoard(board: Board, today: string): Task[] {
+  const promoted: Task[] = []
   for (const task of board.tasks) {
-    const promoted = reconcileTask(task, today)
-    if (promoted) {
-      // Update the task in place
-      Object.assign(task, promoted)
-      return promoted
+    const promotedTask = reconcileTask(task, today)
+    if (promotedTask) {
+      Object.assign(task, promotedTask)
+      promoted.push(promotedTask)
     }
   }
-  return null
+  return promoted
 }
