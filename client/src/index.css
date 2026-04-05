@@ -1,3 +1,27 @@
+/* === CSS Custom Properties — C1 Indigo & Amber === */
+:root {
+  --bg-board: #f8fafc;
+  --bg-card: #ffffff;
+  --accent-backlog: #6366f1;
+  --accent-today: #f59e0b;
+  --accent-done: #22c55e;
+  --accent-appointment: #ec4899;
+  --accent-shopping: #14b8a6;
+  --accent-thisweek: #8b5cf6;
+  --accent-custom: #f97316;
+  --priority-high: #ef4444;
+  --priority-medium: #f59e0b;
+  --priority-low: #22c55e;
+  --assignee-sl-bg: #eef2ff;
+  --assignee-sl-text: #6366f1;
+  --assignee-kl-bg: #dbeafe;
+  --assignee-kl-text: #1e40af;
+  --text-done: #9ca3af;
+  --text-muted: #6b7280;
+  --border-default: #d1d5db;
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.06);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,7 +30,7 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f5f5f5;
+  background: var(--bg-board);
   min-height: 100vh;
 }
 
@@ -14,7 +38,7 @@ body {
   min-height: 100vh;
 }
 
-/* Board layout */
+/* === Board === */
 .board {
   display: flex;
   gap: 16px;
@@ -25,55 +49,55 @@ body {
   overscroll-behavior: contain;
 }
 
-/* Column */
+/* === Column === */
 .column {
-  background: #e8e8e8;
-  border-radius: 8px;
+  background: var(--bg-card);
+  border-radius: 12px;
   min-width: 280px;
   max-width: 320px;
   flex-shrink: 0;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
 .column-header {
-  padding: 12px 16px;
-  font-weight: 600;
+  padding: 10px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #d0d0d0;
 }
 
 .column-header h3 {
-  font-size: 14px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #333;
 }
 
 .task-count {
-  background: #ccc;
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 12px;
-  color: #555;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .column-tasks {
-  padding: 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-height: 100px;
 }
 
-/* Task card */
+/* === Task Card === */
 .task-card {
-  background: white;
-  border-radius: 6px;
-  padding: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow-card);
   cursor: grab;
   user-select: none;
+  border-left: 3px solid transparent;
 }
 
 .task-card:active {
@@ -81,19 +105,28 @@ body {
 }
 
 .task-card-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: #111;
   word-break: break-word;
 }
 
 .task-card-title input {
   width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 14px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
   font-family: inherit;
+}
+
+.task-description {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Dragging state */
@@ -102,7 +135,7 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* DragOverlay — prevent text selection and touch interference on iPad */
+/* DragOverlay */
 [data-dnd-drag-overlay] {
   user-select: none;
   -webkit-user-select: none;
@@ -114,43 +147,42 @@ body {
   -webkit-user-select: none;
 }
 
-/* Add task / column forms */
+/* === Add task / column forms === */
 .add-task-btn {
   width: 100%;
   padding: 8px;
   border: none;
   background: transparent;
-  color: #666;
+  color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
   text-align: left;
-  border-radius: 0 0 8px 8px;
 }
 
 .add-task-btn:hover {
-  background: #ddd;
-  color: #333;
+  color: #374151;
 }
 
 .add-form {
-  padding: 12px;
-  background: #e0e0e0;
-  border-radius: 0 0 8px 8px;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 0 0 12px 12px;
 }
 
 .add-form input {
   width: 100%;
   padding: 8px;
-  border: 1px solid #bbb;
-  border-radius: 4px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
   margin-bottom: 8px;
+  background: white;
 }
 
 .add-form input:focus {
   outline: none;
-  border-color: #666;
+  border-color: var(--accent-backlog);
 }
 
 .add-form-actions {
@@ -162,22 +194,22 @@ body {
   flex: 1;
   padding: 6px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
 }
 
 .add-form-actions .btn-primary {
-  background: #333;
+  background: var(--accent-backlog);
   color: white;
 }
 
 .add-form-actions .btn-secondary {
-  background: #ccc;
-  color: #333;
+  background: #e5e7eb;
+  color: #374151;
 }
 
-/* Add column */
+/* === Add column === */
 .add-column {
   min-width: 280px;
   max-width: 320px;
@@ -187,25 +219,25 @@ body {
 .add-column-btn {
   width: 100%;
   padding: 16px;
-  border: 2px dashed #ccc;
-  border-radius: 8px;
+  border: 2px dashed var(--border-default);
+  border-radius: 12px;
   background: transparent;
-  color: #888;
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
 }
 
 .add-column-btn:hover {
-  border-color: #999;
-  color: #555;
-  background: #f0f0f0;
+  border-color: var(--accent-backlog);
+  color: var(--accent-backlog);
+  background: var(--assignee-sl-bg);
 }
 
-/* Column delete */
+/* === Column delete === */
 .column-delete {
   background: none;
   border: none;
-  color: #999;
+  color: #d1d5db;
   cursor: pointer;
   font-size: 16px;
   padding: 2px 4px;
@@ -213,11 +245,11 @@ body {
 }
 
 .column-delete:hover {
-  background: #d0d0d0;
-  color: #555;
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
-/* Task Drawer overlay */
+/* === Task Drawer overlay === */
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -231,14 +263,14 @@ body {
   background: white;
   width: 380px;
   height: 100%;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
 }
 
 .task-drawer-header {
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -247,7 +279,7 @@ body {
 }
 
 .task-drawer-header h2 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #111;
   margin: 0;
@@ -256,103 +288,135 @@ body {
 .task-drawer-close {
   background: none;
   border: none;
-  font-size: 22px;
+  font-size: 20px;
   cursor: pointer;
-  color: #888;
-  padding: 4px 8px;
+  color: #9ca3af;
+  padding: 2px 6px;
   line-height: 1;
   border-radius: 4px;
 }
 
 .task-drawer-close:hover {
   background: #f3f4f6;
-  color: #333;
+  color: #374151;
 }
 
 .task-drawer-body {
-  padding: 20px;
+  padding: 16px 18px;
   flex: 1;
   overflow-y: auto;
 }
 
 .task-drawer-field {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .task-drawer-field label {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  color: #374151;
-  margin-bottom: 6px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
 }
 
 .task-drawer-field input[type="text"],
 .task-drawer-field textarea {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 8px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 8px 12px;
   font-size: 14px;
   font-family: inherit;
   box-sizing: border-box;
+  background: white;
+  color: #111;
 }
 
 .task-drawer-field textarea {
-  min-height: 80px;
+  min-height: 70px;
   resize: vertical;
 }
 
 .task-drawer-field input[type="date"] {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 8px 10px;
-  font-size: 14px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
   box-sizing: border-box;
+  background: white;
 }
 
 .task-drawer-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .task-drawer-btn-group {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .task-drawer-btn-group button {
   flex: 1;
-  padding: 7px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  padding: 7px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
   background: white;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
-  color: #374151;
+  color: var(--text-muted);
 }
 
 .task-drawer-btn-group button.selected {
-  border-width: 2px;
-  border-color: #333;
-  background: #333;
-  color: white;
   font-weight: 500;
 }
 
+.task-drawer-btn-group button.selected.priority-high,
+.task-drawer-btn-group button.priority-high.selected {
+  background: #fef2f2;
+  border-color: var(--priority-high);
+  color: var(--priority-high);
+}
+
+.task-drawer-btn-group button.priority-medium.selected {
+  background: #fffbeb;
+  border-color: var(--priority-medium);
+  color: #b45309;
+}
+
+.task-drawer-btn-group button.priority-low.selected {
+  background: #f0fdf4;
+  border-color: var(--priority-low);
+  color: #15803d;
+}
+
+.task-drawer-btn-group button.assignee-sl.selected {
+  background: var(--assignee-sl-bg);
+  border-color: var(--assignee-sl-text);
+  color: var(--assignee-sl-text);
+}
+
+.task-drawer-btn-group button.assignee-kl.selected {
+  background: var(--assignee-kl-bg);
+  border-color: var(--assignee-kl-text);
+  color: var(--assignee-kl-text);
+}
+
 .task-drawer-actions {
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-top: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .task-drawer-danger-zone {
-  padding: 12px 20px 20px;
+  padding: 0 18px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -361,8 +425,8 @@ body {
 .btn-danger-full {
   width: 100%;
   padding: 10px;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   border: 1px solid;
@@ -401,17 +465,17 @@ body {
 .task-drawer-actions .btn-save {
   flex: 1;
   padding: 10px;
-  background: #333;
+  background: var(--accent-backlog);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   font-weight: 500;
 }
 
 .task-drawer-actions .btn-save:disabled {
-  background: #ccc;
+  background: #d1d5db;
   cursor: not-allowed;
 }
 
@@ -419,40 +483,10 @@ body {
   padding: 10px 16px;
   background: white;
   color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
-}
-
-.task-drawer-actions .text-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #f3f4f6;
-}
-
-.task-drawer-actions .btn-text {
-  background: none;
-  border: none;
-  padding: 6px 0;
-  font-size: 13px;
-  cursor: pointer;
-  text-align: left;
-  color: #6b7280;
-}
-
-.task-drawer-actions .btn-text:hover {
-  color: #374151;
-}
-
-.task-drawer-actions .btn-text.danger {
-  color: #dc2626;
-}
-
-.task-drawer-actions .btn-text.danger:hover {
-  color: #b91c1c;
 }
 
 .drawer-error {
