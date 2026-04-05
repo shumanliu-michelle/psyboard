@@ -160,17 +160,6 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     setBlockedDrag(null)
     onRefresh()
   }
-      return
-    }
-
-    await api.updateTask(task.id, {
-      doDate: blockedDragDoDate || null,
-      dueDate: blockedDragDueDate || null,
-      columnId: targetColumnId,
-    }).catch(console.error)
-    setBlockedDrag(null)
-    onRefresh()
-  }
 
   return (
     <>
