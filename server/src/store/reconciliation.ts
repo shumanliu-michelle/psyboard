@@ -12,10 +12,10 @@ export function reconcileTask(task: Task, today: string): Task | null {
   }
 
   // Today promotion rule
-  const doDateOk = task.doDate !== undefined && task.doDate <= today
+  const doDateOk = task.doDate != null && task.doDate <= today
   const dueDateFallback =
-    task.doDate === undefined &&
-    task.dueDate !== undefined &&
+    task.doDate == null &&
+    task.dueDate != null &&
     task.dueDate <= today
 
   if (doDateOk || dueDateFallback) {

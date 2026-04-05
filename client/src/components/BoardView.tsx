@@ -9,10 +9,15 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import type { Board, Task } from '../types'
+import { TODAY_COLUMN_ID } from '../types'
 import { ColumnCard } from './ColumnCard'
 import { AddColumnForm } from './AddColumnForm'
 import { TaskDrawer } from './TaskDrawer'
 import { api } from '../api'
+
+function getToday(): string {
+  return new Date().toISOString().split('T')[0]
+}
 
 function sortTasksForColumn(tasks: Task[], _columnId: string, _columnKind: 'system' | 'custom', systemKey?: string): Task[] {
   if (systemKey === 'backlog') {
@@ -57,6 +62,8 @@ interface BoardViewProps {
 export function BoardView({ board, onRefresh }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [showAddColumn, setShowAddColumn] = useState(false)
+  const [blockedDrag, setBlockedDrag] = useState<{ task: Task; targetColumnId: string } | null>(null)
+  const [blockedDragDate, setBlockedDragDate] = useState('')
   const [drawerState, setDrawerState] = useState<{
     open: boolean
     mode: 'create' | 'edit'
@@ -107,10 +114,28 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     // If dropped on a column (empty area)
     if (board.columns.find(c => c.id === targetColumnId)) {
       if (task.columnId !== targetColumnId) {
+        // Block moving out of Today if doDate is today
+        if (task.columnId === TODAY_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID && task.doDate === getToday()) {
+          setBlockedDrag({ task, targetColumnId })
+          setBlockedDragDate('')
+          return
+        }
         // Move to new column
         api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
       }
     }
+  }
+
+  async function confirmBlockedDrag() {
+    if (!blockedDrag) return
+    const { task, targetColumnId } = blockedDrag
+    // Update doDate to the new date (if set) then move
+    await api.updateTask(task.id, {
+      doDate: blockedDragDate || null,
+      columnId: targetColumnId,
+    }).catch(console.error)
+    setBlockedDrag(null)
+    onRefresh()
   }
 
   return (
@@ -177,6 +202,41 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         onClose={closeDrawer}
         onSaved={() => { onRefresh() }}
       />
+    )}
+
+    {blockedDrag && (
+      <div className="drawer-overlay" onClick={() => setBlockedDrag(null)}>
+        <div className="task-drawer" onClick={e => e.stopPropagation()}>
+          <div className="task-drawer-header">
+            <h2>Cannot move task</h2>
+            <button className="task-drawer-close" onClick={() => setBlockedDrag(null)} aria-label="Close">×</button>
+          </div>
+          <div className="task-drawer-body">
+            <p style={{ fontSize: 14, color: '#374151', marginBottom: 16 }}>
+              <strong>"{blockedDrag.task.title}"</strong> has a doDate of today. It cannot be moved to another column until the doDate is changed.
+            </p>
+            <div className="task-drawer-field">
+              <label htmlFor="blocked-do-date">New do date</label>
+              <input
+                id="blocked-do-date"
+                type="date"
+                value={blockedDragDate}
+                onChange={e => setBlockedDragDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="task-drawer-actions">
+            <div className="primary-actions">
+              <button className="btn-save" onClick={confirmBlockedDrag}>
+                Move task
+              </button>
+              <button className="btn-cancel" onClick={() => setBlockedDrag(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     )}
     </>
   )
