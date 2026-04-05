@@ -262,7 +262,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
           </div>
           <div className="task-drawer-actions">
             <div className="primary-actions">
-              <button className="btn-save" onClick={confirmBlockedDrag}>
+              <button className="btn-save" onClick={confirmBlockedDrag} disabled={!!blockedDragDateError}>
                 Move task
               </button>
               <button className="btn-cancel" onClick={() => setBlockedDrag(null)}>
