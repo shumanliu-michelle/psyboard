@@ -81,8 +81,9 @@ body {
 }
 
 .task-card-title {
-  font-size: 14px;
-  color: #222;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
   word-break: break-word;
 }
 
@@ -214,4 +215,249 @@ body {
 .column-delete:hover {
   background: #d0d0d0;
   color: #555;
+}
+
+/* Task Drawer overlay */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.task-drawer {
+  background: white;
+  width: 380px;
+  height: 100%;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.task-drawer-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.task-drawer-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
+}
+
+.task-drawer-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #888;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.task-drawer-close:hover {
+  background: #f3f4f6;
+  color: #333;
+}
+
+.task-drawer-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.task-drawer-field {
+  margin-bottom: 16px;
+}
+
+.task-drawer-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.task-drawer-field input[type="text"],
+.task-drawer-field textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.task-drawer-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.task-drawer-field input[type="date"] {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.task-drawer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.task-drawer-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.task-drawer-btn-group button {
+  flex: 1;
+  padding: 7px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  color: #374151;
+}
+
+.task-drawer-btn-group button.selected {
+  border-width: 2px;
+  border-color: #333;
+  background: #333;
+  color: white;
+  font-weight: 500;
+}
+
+.task-drawer-actions {
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.task-drawer-danger-zone {
+  padding: 12px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-danger-full {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.btn-danger-full.btn-mark-done {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+
+.btn-danger-full.btn-mark-done:hover {
+  background: #a7f3d0;
+}
+
+.btn-danger-full.btn-delete {
+  background: white;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.btn-danger-full.btn-delete:hover {
+  background: #fef2f2;
+}
+
+.btn-danger-full:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.task-drawer-actions .primary-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.task-drawer-actions .btn-save {
+  flex: 1;
+  padding: 10px;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.task-drawer-actions .btn-save:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.task-drawer-actions .btn-cancel {
+  padding: 10px 16px;
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.task-drawer-actions .text-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.task-drawer-actions .btn-text {
+  background: none;
+  border: none;
+  padding: 6px 0;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  color: #6b7280;
+}
+
+.task-drawer-actions .btn-text:hover {
+  color: #374151;
+}
+
+.task-drawer-actions .btn-text.danger {
+  color: #dc2626;
+}
+
+.task-drawer-actions .btn-text.danger:hover {
+  color: #b91c1c;
+}
+
+.drawer-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
 }

@@ -9,9 +9,15 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import type { Board, Task } from '../types'
+import { TODAY_COLUMN_ID } from '../types'
 import { ColumnCard } from './ColumnCard'
 import { AddColumnForm } from './AddColumnForm'
+import { TaskDrawer } from './TaskDrawer'
 import { api } from '../api'
+
+function getToday(): string {
+  return new Date().toISOString().split('T')[0]
+}
 
 function sortTasksForColumn(tasks: Task[], _columnId: string, _columnKind: 'system' | 'custom', systemKey?: string): Task[] {
   if (systemKey === 'backlog') {
@@ -56,6 +62,29 @@ interface BoardViewProps {
 export function BoardView({ board, onRefresh }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [showAddColumn, setShowAddColumn] = useState(false)
+  const [blockedDrag, setBlockedDrag] = useState<{ task: Task; targetColumnId: string } | null>(null)
+  const [blockedDragDoDate, setBlockedDragDoDate] = useState('')
+  const [blockedDragDueDate, setBlockedDragDueDate] = useState('')
+  const [blockedDragDateError, setBlockedDragDateError] = useState('')
+  const [drawerState, setDrawerState] = useState<{
+    open: boolean
+    mode: 'create' | 'edit'
+    task?: Task
+    initialTitle?: string
+    columnId?: string
+  }>({ open: false, mode: 'create', columnId: undefined })
+
+  function openDrawerForCreate(columnId: string, initialTitle?: string) {
+    setDrawerState({ open: true, mode: 'create', columnId, initialTitle })
+  }
+
+  function openDrawerForEdit(task: Task) {
+    setDrawerState({ open: true, mode: 'edit', task, columnId: task.columnId })
+  }
+
+  function closeDrawer() {
+    setDrawerState(s => ({ ...s, open: false }))
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -87,13 +116,53 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     // If dropped on a column (empty area)
     if (board.columns.find(c => c.id === targetColumnId)) {
       if (task.columnId !== targetColumnId) {
+        // Block moving out of Today if it would be immediately reconcile-promoted back
+        const today = getToday()
+        const wouldReconcile =
+          (task.columnId === TODAY_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID) &&
+          (task.doDate === today || (task.doDate == null && task.dueDate != null && task.dueDate <= today))
+        if (wouldReconcile) {
+          setBlockedDrag({ task, targetColumnId })
+          setBlockedDragDoDate(task.doDate ?? '')
+          setBlockedDragDueDate(task.dueDate ?? '')
+          setBlockedDragDateError('')
+          return
+        }
         // Move to new column
         api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
       }
     }
   }
 
+  function validateBlockedDates(doDate: string, dueDate: string) {
+    if (doDate && dueDate && dueDate < doDate) {
+      setBlockedDragDateError('Due date cannot be earlier than do date.')
+    } else {
+      setBlockedDragDateError('')
+    }
+  }
+
+  async function confirmBlockedDrag() {
+    if (!blockedDrag) return
+    const { task, targetColumnId } = blockedDrag
+
+    // Validate doDate <= dueDate
+    if (blockedDragDoDate && blockedDragDueDate && blockedDragDueDate < blockedDragDoDate) {
+      setBlockedDragDateError('Due date cannot be earlier than do date.')
+      return
+    }
+
+    await api.updateTask(task.id, {
+      doDate: blockedDragDoDate || null,
+      dueDate: blockedDragDueDate || null,
+      columnId: targetColumnId,
+    }).catch(console.error)
+    setBlockedDrag(null)
+    onRefresh()
+  }
+
   return (
+    <>
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
@@ -116,6 +185,10 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
                 column={column}
                 tasks={columnTasks}
                 onRefresh={onRefresh}
+                onOpenDrawer={(task, initialTitle) => {
+                  if (task) openDrawerForEdit(task)
+                  else openDrawerForCreate(column.id, initialTitle)
+                }}
               />
             )
           })}
@@ -142,5 +215,64 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         ) : null}
       </DragOverlay>
     </DndContext>
+
+    {drawerState.open && drawerState.columnId && (
+      <TaskDrawer
+        mode={drawerState.mode}
+        task={drawerState.task}
+        initialTitle={drawerState.initialTitle}
+        columnId={drawerState.columnId}
+        onClose={closeDrawer}
+        onSaved={() => { onRefresh() }}
+      />
+    )}
+
+    {blockedDrag && (
+      <div className="drawer-overlay" onClick={() => setBlockedDrag(null)}>
+        <div className="task-drawer" onClick={e => e.stopPropagation()}>
+          <div className="task-drawer-header">
+            <h2>Cannot move task</h2>
+            <button className="task-drawer-close" onClick={() => setBlockedDrag(null)} aria-label="Close">×</button>
+          </div>
+          <div className="task-drawer-body">
+            <p style={{ fontSize: 14, color: '#374151', marginBottom: 16 }}>
+              <strong>"{blockedDrag.task.title}"</strong> has a doDate of today. To move it, please update the dates below.
+            </p>
+            <div className="task-drawer-row">
+              <div className="task-drawer-field">
+                <label htmlFor="blocked-do-date">Do date</label>
+                <input
+                  id="blocked-do-date"
+                  type="date"
+                  value={blockedDragDoDate}
+                  onChange={e => { setBlockedDragDoDate(e.target.value); validateBlockedDates(e.target.value, blockedDragDueDate) }}
+                />
+              </div>
+              <div className="task-drawer-field">
+                <label htmlFor="blocked-due-date">Due date</label>
+                <input
+                  id="blocked-due-date"
+                  type="date"
+                  value={blockedDragDueDate}
+                  onChange={e => { setBlockedDragDueDate(e.target.value); validateBlockedDates(blockedDragDoDate, e.target.value) }}
+                />
+              </div>
+            </div>
+            {blockedDragDateError && <p className="drawer-error">{blockedDragDateError}</p>}
+          </div>
+          <div className="task-drawer-actions">
+            <div className="primary-actions">
+              <button className="btn-save" onClick={confirmBlockedDrag} disabled={!!blockedDragDateError}>
+                Move task
+              </button>
+              <button className="btn-cancel" onClick={() => setBlockedDrag(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

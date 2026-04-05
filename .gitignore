@@ -422,6 +422,7 @@ server/data/board.json
 server/data/*.tmp
 client/dist/
 e2e/test-results/
+test-results/
 .superpowers/**
 .epics/**
 .worktrees/

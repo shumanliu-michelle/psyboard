@@ -86,7 +86,13 @@ Sort tasks by:
 `server/src/store/reconciliation.ts` — a pure function called by `readBoard()`.
 
 ### When it runs
-On every `readBoard()` call (app init, page load/reload).
+Reconciliation runs in three places:
+
+1. **`readBoard()`** — on app init and page load/reload
+2. **`createTask()`** — after the task is created and persisted
+3. **`updateTask()`** — after any task update is persisted
+
+Each trigger is independent — reconciliation checks all eligible tasks each time, so no need to track "pending" promotions.
 
 ### Scope
 Only tasks that are:
@@ -124,7 +130,9 @@ function reconcileTask(task: Task, today: string): Task | null {
 
 ---
 
-## API Changes
+### Reconciliation caller
+
+After `createTask()` persists and after `updateTask()` persists, call `reconcileBoard(board)` to promote any newly eligible tasks. The `reconcileBoard` function reads the current board, applies reconciliation, and persists the result.
 
 ### `POST /api/tasks` — `CreateTaskInput`
 

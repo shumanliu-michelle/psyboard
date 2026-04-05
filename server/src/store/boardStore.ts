@@ -11,7 +11,11 @@ const DATA_DIR = path.join(__dirname, '..', '..', 'data')
 const BOARD_FILE = path.join(DATA_DIR, 'board.json')
 
 function getTodayString(): string {
-  return new Date().toISOString().split('T')[0] // YYYY-MM-DD
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 const SYSTEM_COLUMNS: Column[] = [
@@ -211,8 +215,8 @@ export function createTask(
   title: string,
   columnId: string,
   description?: string,
-  doDate?: string,
-  dueDate?: string,
+  doDate?: string | null,
+  dueDate?: string | null,
   priority?: 'low' | 'medium' | 'high'
 ): Task {
   const board = readBoard()

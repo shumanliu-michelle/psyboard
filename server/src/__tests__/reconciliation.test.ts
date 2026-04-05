@@ -49,6 +49,12 @@ describe('reconcileBoard', () => {
     expect(result).toContainEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
   })
 
+  it('promotes task with dueDate <= today when doDate is null', () => {
+    const board = makeBoard([{ id: 't1', doDate: null, dueDate: '2026-04-05', columnId: BACKLOG_COLUMN_ID }])
+    const result = reconcileBoard(board, today)
+    expect(result).toContainEqual({ ...board.tasks[0], columnId: TODAY_COLUMN_ID })
+  })
+
   it('does not promote task with dueDate > today and no doDate', () => {
     const board = makeBoard([{ id: 't1', dueDate: '2026-04-10', columnId: BACKLOG_COLUMN_ID }])
     const result = reconcileBoard(board, today)

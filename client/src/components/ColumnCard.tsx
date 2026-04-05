@@ -3,17 +3,17 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
 import type { Column, Task } from '../types'
 import { TaskCard, KebabIcon } from './TaskCard'
-import { AddTaskForm } from './AddTaskForm'
+import { QuickAddForm } from './QuickAddForm'
 import { api } from '../api'
 
 interface ColumnCardProps {
   column: Column
   tasks: Task[]
   onRefresh: () => void
+  onOpenDrawer: (task?: Task, initialTitle?: string) => void  // opens drawer
 }
 
-export function ColumnCard({ column, tasks, onRefresh }: ColumnCardProps) {
-  const [showAddForm, setShowAddForm] = useState(false)
+export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(column.title)
@@ -146,21 +146,18 @@ export function ColumnCard({ column, tasks, onRefresh }: ColumnCardProps) {
               task={task}
               onUpdated={onRefresh}
               onDeleted={onRefresh}
+              onOpenEdit={() => onOpenDrawer(task)}
             />
           ))}
         </SortableContext>
       </div>
 
-      {showAddForm ? (
-        <AddTaskForm
+      {column.systemKey !== 'done' && (
+        <QuickAddForm
           columnId={column.id}
-          onAdded={() => { setShowAddForm(false); onRefresh() }}
-          onCancel={() => setShowAddForm(false)}
+          onExpandToDrawer={title => onOpenDrawer(undefined, title)}
+          onRefresh={onRefresh}
         />
-      ) : (
-        <button className="add-task-btn" onClick={() => setShowAddForm(true)}>
-          + Add task
-        </button>
       )}
     </div>
   )
