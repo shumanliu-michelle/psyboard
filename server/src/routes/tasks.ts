@@ -4,7 +4,14 @@ import { createTask, updateTask, deleteTask, readBoard } from '../store/boardSto
 const router = Router()
 
 router.post('/', (req, res) => {
-  const { title, columnId, description } = req.body as { title?: string; columnId?: string; description?: string }
+  const { title, columnId, description, doDate, dueDate, priority } = req.body as {
+    title?: string
+    columnId?: string
+    description?: string
+    doDate?: string
+    dueDate?: string
+    priority?: 'low' | 'medium' | 'high'
+  }
 
   // Validate
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
@@ -13,6 +20,20 @@ router.post('/', (req, res) => {
   }
   if (!columnId || typeof columnId !== 'string') {
     res.status(400).json({ error: 'columnId is required' })
+    return
+  }
+
+  // Validate doDate/dueDate if both present
+  if (doDate && dueDate && doDate.length > 0 && dueDate.length > 0) {
+    if (dueDate < doDate) {
+      res.status(400).json({ error: 'dueDate must be on or after doDate' })
+      return
+    }
+  }
+
+  // Validate priority
+  if (priority !== undefined && !['low', 'medium', 'high'].includes(priority)) {
+    res.status(400).json({ error: 'priority must be low, medium, or high' })
     return
   }
 
@@ -25,7 +46,14 @@ router.post('/', (req, res) => {
   }
 
   try {
-    const task = createTask(title.trim(), columnId, description?.trim())
+    const task = createTask(
+      title.trim(),
+      columnId,
+      description?.trim(),
+      doDate?.trim() || undefined,
+      dueDate?.trim() || undefined,
+      priority
+    )
     res.status(201).json(task)
   } catch (err) {
     res.status(500).json({ error: 'Failed to create task' })
@@ -34,10 +62,35 @@ router.post('/', (req, res) => {
 
 router.patch('/:id', (req, res) => {
   const { id } = req.params
-  const updates = req.body as { title?: string; description?: string; columnId?: string; order?: number }
+  const updates = req.body as {
+    title?: string
+    description?: string
+    columnId?: string
+    order?: number
+    assignee?: 'SL' | 'KL' | null
+    doDate?: string
+    dueDate?: string
+    priority?: 'low' | 'medium' | 'high'
+    completedAt?: string
+    manualOrder?: number
+  }
 
   if (!id || id.length < 10) {
     res.status(400).json({ error: 'Invalid task ID' })
+    return
+  }
+
+  // Validate doDate/dueDate if both present
+  if (updates.doDate && updates.dueDate && updates.doDate.length > 0 && updates.dueDate.length > 0) {
+    if (updates.dueDate < updates.doDate) {
+      res.status(400).json({ error: 'dueDate must be on or after doDate' })
+      return
+    }
+  }
+
+  // Validate priority
+  if (updates.priority !== undefined && !['low', 'medium', 'high'].includes(updates.priority)) {
+    res.status(400).json({ error: 'priority must be low, medium, or high' })
     return
   }
 
