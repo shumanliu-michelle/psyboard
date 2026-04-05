@@ -107,9 +107,14 @@ test('can edit a task title', async ({ page }) => {
 
   await page.goto('/')
 
-  // Click edit button to enter edit mode
+  // Click kebab menu button to open dropdown
   await page.locator('.task-card', { hasText: 'Old title' })
-    .locator('button', { hasText: 'edit' })
+    .locator('button[aria-label="Menu"]')
+    .click()
+
+  // Click Edit in the dropdown
+  await page.locator('.task-card', { hasText: 'Old title' })
+    .locator('button', { hasText: 'Edit' })
     .click()
 
   // Editable input appears
@@ -138,9 +143,14 @@ test('can delete a task', async ({ page }) => {
 
   await page.goto('/')
 
-  // Click delete on the task
+  // Click kebab menu button to open dropdown
   await page.locator('.task-card', { hasText: 'Task to delete' })
-    .locator('button', { hasText: 'delete' })
+    .locator('button[aria-label="Menu"]')
+    .click()
+
+  // Click Delete in the dropdown
+  await page.locator('.task-card', { hasText: 'Task to delete' })
+    .locator('button', { hasText: 'Delete' })
     .click()
 
   // Task gone
