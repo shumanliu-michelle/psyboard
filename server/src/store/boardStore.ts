@@ -2,21 +2,21 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { randomUUID } from 'crypto'
-import type { Board, Column, Task, UpdateTaskInput } from '../types.js'
+import type { Board, Column, Task, UpdateTaskInput, SystemKey } from '../types.js'
+import { BACKLOG_COLUMN_ID, TODAY_COLUMN_ID, DONE_COLUMN_ID, ColumnKind } from '../types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, '..', '..', 'data')
 const BOARD_FILE = path.join(DATA_DIR, 'board.json')
 
-const DEFAULT_COLUMNS: Column[] = [
-  { id: randomUUID(), title: 'Todo', order: 0 },
-  { id: randomUUID(), title: 'Today', order: 1 },
-  { id: randomUUID(), title: 'This Week', order: 2 },
-  { id: randomUUID(), title: 'Done', order: 3 },
+const SYSTEM_COLUMNS: Column[] = [
+  { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system' as ColumnKind, systemKey: 'backlog' as SystemKey, position: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system' as ColumnKind, systemKey: 'today' as SystemKey, position: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: DONE_COLUMN_ID, title: 'Done', kind: 'system' as ColumnKind, systemKey: 'done' as SystemKey, position: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ]
 
 const DEFAULT_BOARD: Board = {
-  columns: DEFAULT_COLUMNS,
+  columns: [...SYSTEM_COLUMNS],
   tasks: [],
 }
 
@@ -29,19 +29,64 @@ function ensureDataDir(): void {
 export function readBoard(): Board {
   ensureDataDir()
   if (!fs.existsSync(BOARD_FILE)) {
-    // First run — create default board
     writeBoard(DEFAULT_BOARD)
     return DEFAULT_BOARD
   }
   try {
     const raw = fs.readFileSync(BOARD_FILE, 'utf-8')
-    return JSON.parse(raw) as Board
+    const board = JSON.parse(raw) as Board
+    return migrateAndHeal(board)
   } catch {
-    // Corrupted — recreate from default
     const board = DEFAULT_BOARD
     writeBoard(board)
     return board
   }
+}
+
+function migrateAndHeal(board: Board): Board {
+  const now = new Date().toISOString()
+  const hasSystemColumns = (col: Column) =>
+    col.id === BACKLOG_COLUMN_ID || col.id === TODAY_COLUMN_ID || col.id === DONE_COLUMN_ID
+
+  const existingSystem = board.columns.filter(c => hasSystemColumns(c))
+  const missingSystem: Column[] = []
+
+  for (const sys of SYSTEM_COLUMNS) {
+    if (!board.columns.find(c => c.id === sys.id)) {
+      missingSystem.push({ ...sys, createdAt: now, updatedAt: now })
+    }
+  }
+
+  const migratedColumns = board.columns.map(col => {
+    if (hasSystemColumns(col)) {
+      const sysKey = col.id === BACKLOG_COLUMN_ID ? 'backlog'
+        : col.id === TODAY_COLUMN_ID ? 'today' : 'done'
+      return {
+        ...col,
+        kind: 'system' as const,
+        systemKey: sysKey as SystemKey,
+        position: col.position ?? (col as any).order ?? 0,
+        updatedAt: now,
+      }
+    } else {
+      return {
+        ...col,
+        kind: 'custom' as const,
+        position: col.position ?? (col as any).order ?? board.columns.indexOf(col),
+        updatedAt: now,
+      }
+    }
+  })
+
+  const allColumns = [...migratedColumns, ...missingSystem]
+
+  const healedBoard: Board = {
+    ...board,
+    columns: allColumns,
+    tasks: board.tasks ?? [],
+  }
+  writeBoard(healedBoard)
+  return healedBoard
 }
 
 export function writeBoard(board: Board): void {
