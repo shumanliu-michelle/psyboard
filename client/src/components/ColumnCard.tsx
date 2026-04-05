@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
 import type { Column, Task } from '../types'
 import { TaskCard, KebabIcon } from './TaskCard'
+import { getColumnColor, CUSTOM_COLUMN_COLOR } from '../styles/columnColors'
 
 const GripIcon = () => (
   <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" style={{ flexShrink: 0 }}>
@@ -59,84 +60,109 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
       ref={setColumnRef}
       className="column"
       style={{
-        background: isOver ? '#dde' : undefined,
+        background: isOver ? '#f9fafb' : undefined,
         transform: CSS.Transform.toString(columnTransform),
         transition: columnTransition,
         opacity: isColumnDragging ? 0.5 : 1,
+        boxShadow: isOver
+          ? undefined
+          : `0 4px 16px ${getColumnColor(column.systemKey).shadow}`,
       }}
     >
       {column.kind === 'custom' ? (
-      <div className="column-header" ref={menuRef} style={{ position: 'relative' }}>
-        <div {...columnAttributes} {...columnListeners} style={{ width: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab', touchAction: 'none' }}>
-          <GripIcon />
-        </div>
-        {renaming ? (
-          <input
-            autoFocus
-            value={renameValue}
-            onChange={e => setRenameValue(e.target.value)}
-            onKeyDown={async e => {
-              if (e.key === 'Enter') {
+      <div
+        {...columnAttributes}
+        {...columnListeners}
+        className="column-header"
+        ref={menuRef}
+        style={{
+          borderTop: `2px solid ${CUSTOM_COLUMN_COLOR.accent}`,
+          cursor: 'grab',
+          touchAction: 'none',
+          position: 'relative',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: CUSTOM_COLUMN_COLOR.accent,
+            flexShrink: 0,
+          }} />
+          {renaming ? (
+            <input
+              autoFocus
+              value={renameValue}
+              onChange={e => setRenameValue(e.target.value)}
+              onKeyDown={async e => {
+                if (e.key === 'Enter') {
+                  try {
+                    await api.updateColumn(column.id, { title: renameValue.trim() })
+                    setRenaming(false)
+                    onRefresh()
+                  } catch { setRenameValue(column.title); setRenaming(false) }
+                }
+                if (e.key === 'Escape') { setRenameValue(column.title); setRenaming(false) }
+              }}
+              onBlur={async () => {
                 try {
                   await api.updateColumn(column.id, { title: renameValue.trim() })
-                  setRenaming(false)
                   onRefresh()
-                } catch { setRenameValue(column.title); setRenaming(false) }
-              }
-              if (e.key === 'Escape') { setRenameValue(column.title); setRenaming(false) }
-            }}
-            onBlur={async () => {
-              try {
-                await api.updateColumn(column.id, { title: renameValue.trim() })
-                onRefresh()
-              } catch { }
-              setRenaming(false)
-            }}
-          />
-        ) : (
-          <h3 style={{ flex: 1 }}>{column.title}</h3>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="task-count">{tasks.length}</span>
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}
-              aria-label="Menu"
-            >
-              <KebabIcon />
-            </button>
-            {showMenu && (
-              <div style={{
-                position: 'absolute',
-                top: 20,
-                right: 0,
-                background: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: 6,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                padding: 4,
-                zIndex: 10,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                minWidth: 90,
-              }}>
-                <button
-                  onClick={e => { e.stopPropagation(); setShowMenu(false); setRenaming(true) }}
-                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-                >
-                  Rename
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
-                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
-                >
-                  Delete
-                </button>
-              </div>
-            )}
-          </div>
+                } catch { }
+                setRenaming(false)
+              }}
+            />
+          ) : (
+            <h3 style={{ color: CUSTOM_COLUMN_COLOR.accent, flex: 1 }}>
+              {column.title}
+            </h3>
+          )}
+        </div>
+        <span className="task-count" style={{
+          background: CUSTOM_COLUMN_COLOR.bg,
+          color: CUSTOM_COLUMN_COLOR.accent,
+        }}>
+          {tasks.length}
+        </span>
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}
+            aria-label="Menu"
+          >
+            <KebabIcon />
+          </button>
+          {showMenu && (
+            <div style={{
+              position: 'absolute',
+              top: 20,
+              right: 0,
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: 6,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              padding: 4,
+              zIndex: 10,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              minWidth: 90,
+            }}>
+              <button
+                onClick={e => { e.stopPropagation(); setShowMenu(false); setRenaming(true) }}
+                style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+              >
+                Rename
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
+                style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
+              >
+                Delete
+              </button>
+            </div>
+          )}
         </div>
         {confirmDelete && (
           <div style={{
@@ -160,14 +186,34 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         )}
       </div>
     ) : (
-      <div className="column-header">
-        <div {...columnAttributes} {...columnListeners} style={{ width: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab', touchAction: 'none' }}>
-          <GripIcon />
+      <div
+        {...columnAttributes}
+        {...columnListeners}
+        className="column-header"
+        style={{
+          borderTop: `2px solid ${getColumnColor(column.systemKey).accent}`,
+          cursor: 'grab',
+          touchAction: 'none',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: getColumnColor(column.systemKey).accent,
+            flexShrink: 0,
+          }} />
+          <h3 style={{ color: getColumnColor(column.systemKey).accent, flex: 1 }}>
+            {column.title}
+          </h3>
         </div>
-        <h3 style={{ flex: 1 }}>{column.title}</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="task-count">{tasks.length}</span>
-        </div>
+        <span className="task-count" style={{
+          background: getColumnColor(column.systemKey).bg,
+          color: getColumnColor(column.systemKey).accent,
+        }}>
+          {tasks.length}
+        </span>
       </div>
     )}
 
