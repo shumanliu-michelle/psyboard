@@ -51,6 +51,7 @@ export type CreateTaskInput = {
   title: string
   columnId: string
   description?: string
+  notes?: string
   doDate?: string
   dueDate?: string
   priority?: TaskPriority
