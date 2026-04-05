@@ -247,58 +247,60 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
 
   return (
     <>
-    <DndContext
-      sensors={columnSensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleColumnDragStart}
-      onDragEnd={handleColumnDragEnd}
-    >
-      <SortableContext
-        items={board.columns.slice().sort((a, b) => a.position - b.position).map(c => c.id)}
-        strategy={horizontalListSortingStrategy}
+    <div className="board">
+      <DndContext
+        sensors={columnSensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleColumnDragStart}
+        onDragEnd={handleColumnDragEnd}
       >
-        {board.columns
-          .slice()
-          .sort((a, b) => a.position - b.position)
-          .map(column => {
-            const columnTasks = sortTasksForColumn(
-              board.tasks.filter(t => t.columnId === column.id),
-              column.id,
-              column.kind,
-              column.systemKey
-            )
-            return (
-              <ColumnCard
-                key={column.id}
-                column={column}
-                tasks={columnTasks}
-                onRefresh={onRefresh}
-                onOpenDrawer={(task, initialTitle) => {
-                  if (task) openDrawerForEdit(task)
-                  else openDrawerForCreate(column.id, initialTitle)
-                }}
-              />
-            )
-          })}
-      </SortableContext>
+        <SortableContext
+          items={board.columns.slice().sort((a, b) => a.position - b.position).map(c => c.id)}
+          strategy={horizontalListSortingStrategy}
+        >
+          {board.columns
+            .slice()
+            .sort((a, b) => a.position - b.position)
+            .map(column => {
+              const columnTasks = sortTasksForColumn(
+                board.tasks.filter(t => t.columnId === column.id),
+                column.id,
+                column.kind,
+                column.systemKey
+              )
+              return (
+                <ColumnCard
+                  key={column.id}
+                  column={column}
+                  tasks={columnTasks}
+                  onRefresh={onRefresh}
+                  onOpenDrawer={(task, initialTitle) => {
+                    if (task) openDrawerForEdit(task)
+                    else openDrawerForCreate(column.id, initialTitle)
+                  }}
+                />
+              )
+            })}
+        </SortableContext>
 
-      <DragOverlay>
-        {activeColumn ? (
-          <div className="column" style={{
-            opacity: 0.9,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            touchAction: 'none',
-            minWidth: 240,
-          }}>
-            <div className="column-header">
-              <h3>{activeColumn.title}</h3>
+        <DragOverlay>
+          {activeColumn ? (
+            <div className="column" style={{
+              opacity: 0.9,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              touchAction: 'none',
+              minWidth: 240,
+            }}>
+              <div className="column-header">
+                <h3>{activeColumn.title}</h3>
+              </div>
             </div>
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
 
     <div className="add-column">
       {showAddColumn ? (
