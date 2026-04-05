@@ -253,10 +253,13 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
             background: task.assignee === 'SL' ? '#d1fae5' : '#dbeafe',
             color: task.assignee === 'SL' ? '#065f46' : '#1e40af',
             borderRadius: '50%',
-            padding: '3px 5px',
+            width: 24,
+            height: 24,
             fontSize: 11,
             fontWeight: 500,
-            display: 'inline-block',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
             {task.assignee}
           </span>
