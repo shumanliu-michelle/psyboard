@@ -57,14 +57,14 @@ describe('TaskDrawer — create mode', () => {
     })
   })
 
-  it('does NOT close after save (drawer stays open)', async () => {
+  it('closes drawer after successful create (prevents duplicate saves)', async () => {
     vi.mocked(api.createTask).mockResolvedValue({ id: 'new-1' } as Task)
     const onClose = vi.fn()
     render(<TaskDrawer mode="create" columnId="col-backlog" onClose={onClose} onSaved={() => {}} />)
     fireEvent.change(screen.getByPlaceholderText('Task title'), { target: { value: 'New task' } })
     fireEvent.click(screen.getByText('Save'))
     await new Promise(r => setTimeout(r, 0))
-    expect(onClose).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 
   it('closes when Escape key is pressed', () => {
@@ -108,5 +108,15 @@ describe('TaskDrawer — edit mode', () => {
     fireEvent.click(screen.getByText('Mark done'))
     await new Promise(r => setTimeout(r, 0))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('save does NOT close drawer (stays open for further edits)', async () => {
+    vi.mocked(api.updateTask).mockResolvedValue(mockTask)
+    const onClose = vi.fn()
+    render(<TaskDrawer mode="edit" task={mockTask} columnId="col-backlog" onClose={onClose} onSaved={() => {}} />)
+    fireEvent.change(screen.getByPlaceholderText('Task title'), { target: { value: 'Updated' } })
+    fireEvent.click(screen.getByText('Save'))
+    await new Promise(r => setTimeout(r, 0))
+    expect(onClose).not.toHaveBeenCalled()
   })
 })

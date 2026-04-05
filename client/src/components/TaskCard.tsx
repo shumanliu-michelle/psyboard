@@ -74,6 +74,7 @@ export function TaskCard({ task, onDeleted, onOpenEdit }: TaskCardProps) {
       ref={setNodeRef}
       style={{ ...style, position: 'relative' }}
       className={`task-card${isDragging ? ' dragging' : ''}`}
+      onClick={() => onOpenEdit()}
     >
       <div style={{
         position: 'absolute',

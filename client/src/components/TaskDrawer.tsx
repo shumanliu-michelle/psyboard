@@ -78,6 +78,7 @@ export function TaskDrawer({
           dueDate: dueDate || undefined,
           priority,
         })
+        onClose() // Close drawer after create to prevent duplicate saves
       } else if (task) {
         await api.updateTask(task.id, {
           title: title.trim(),

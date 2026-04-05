@@ -70,7 +70,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
   }
 
   function openDrawerForEdit(task: Task) {
-    setDrawerState({ open: true, mode: 'edit', task })
+    setDrawerState({ open: true, mode: 'edit', task, columnId: task.columnId })
   }
 
   function closeDrawer() {
