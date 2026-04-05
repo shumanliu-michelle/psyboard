@@ -146,28 +146,11 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         alignItems: 'flex-end',
-        gap: 4,
-        paddingRight: 4,
+        padding: '8px 4px',
         flexShrink: 0,
       }}>
-        {task.assignee && (
-          <span style={{
-            background: task.assignee === 'SL' ? '#d1fae5' : '#dbeafe',
-            color: task.assignee === 'SL' ? '#065f46' : '#1e40af',
-            borderRadius: '50%',
-            width: 24,
-            height: 24,
-            fontSize: 11,
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            {task.assignee}
-          </span>
-        )}
         <button
           onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}
@@ -178,9 +161,8 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         {showMenu && (
           <div ref={popoverRef} style={{
             position: 'absolute',
-            top: '50%',
+            top: 8,
             right: 32,
-            transform: 'translateY(-50%)',
             background: 'white',
             border: '1px solid #e5e7eb',
             borderRadius: 6,
@@ -268,6 +250,22 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
               </div>
             )}
           </div>
+        )}
+        {task.assignee && (
+          <span style={{
+            background: task.assignee === 'SL' ? '#d1fae5' : '#dbeafe',
+            color: task.assignee === 'SL' ? '#065f46' : '#1e40af',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            fontSize: 11,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {task.assignee}
+          </span>
         )}
       </div>
     </div>
