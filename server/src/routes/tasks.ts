@@ -1,17 +1,11 @@
 import { Router } from 'express'
 import { createTask, updateTask, deleteTask, readBoard } from '../store/boardStore.js'
+import type { CreateTaskInput, UpdateTaskInput } from '../types.js'
 
 const router = Router()
 
 router.post('/', (req, res) => {
-  const { title, columnId, description, doDate, dueDate, priority } = req.body as {
-    title?: string
-    columnId?: string
-    description?: string
-    doDate?: string
-    dueDate?: string
-    priority?: 'low' | 'medium' | 'high'
-  }
+  const { title, columnId, description, doDate, dueDate, priority } = req.body as CreateTaskInput
 
   // Validate
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
@@ -62,18 +56,7 @@ router.post('/', (req, res) => {
 
 router.patch('/:id', (req, res) => {
   const { id } = req.params
-  const updates = req.body as {
-    title?: string
-    description?: string
-    columnId?: string
-    order?: number
-    assignee?: 'SL' | 'KL' | null
-    doDate?: string
-    dueDate?: string
-    priority?: 'low' | 'medium' | 'high'
-    completedAt?: string
-    manualOrder?: number
-  }
+  const updates = req.body as UpdateTaskInput
 
   if (!id || id.length < 10) {
     res.status(400).json({ error: 'Invalid task ID' })
@@ -91,6 +74,12 @@ router.patch('/:id', (req, res) => {
   // Validate priority
   if (updates.priority !== undefined && !['low', 'medium', 'high'].includes(updates.priority)) {
     res.status(400).json({ error: 'priority must be low, medium, or high' })
+    return
+  }
+
+  // Validate assignee
+  if (updates.assignee !== undefined && updates.assignee !== null && !['SL', 'KL'].includes(updates.assignee)) {
+    res.status(400).json({ error: 'assignee must be SL, KL, or null' })
     return
   }
 
