@@ -117,7 +117,7 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
         top: 0,
         left: 0,
         bottom: 0,
-        width: 20,
+        width: 28,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -183,11 +183,11 @@ export function TaskCard({ task, onUpdated, onDeleted }: TaskCardProps) {
           </div>
         )}
       </div>
-      <div className="task-card-title" style={{ paddingLeft: 24 }} onDoubleClick={() => setEditing(true)}>
+      <div className="task-card-title" style={{ paddingLeft: 32 }} onDoubleClick={() => setEditing(true)}>
         {task.title}
       </div>
       {task.assignee && (
-        <div style={{ marginTop: 4 }}>
+        <div style={{ marginTop: 4, paddingLeft: 28 }}>
           <span style={{
             background: task.assignee === 'SL' ? '#d1fae5' : '#dbeafe',
             color: task.assignee === 'SL' ? '#065f46' : '#1e40af',
