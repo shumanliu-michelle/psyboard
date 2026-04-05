@@ -25,6 +25,7 @@ export type Task = {
   id: string
   title: string
   description?: string
+  notes?: string
   columnId: string
   order: number
 
