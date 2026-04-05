@@ -55,6 +55,9 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
     return () => document.removeEventListener('mousedown', handler)
   }, [showMenu])
 
+  const customColors = CUSTOM_COLUMN_COLOR
+  const systemColors = getColumnColor(column.systemKey)
+
   return (
     <div
       ref={setColumnRef}
@@ -66,7 +69,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         opacity: isColumnDragging ? 0.5 : 1,
         boxShadow: isOver
           ? undefined
-          : `0 4px 16px ${getColumnColor(column.systemKey).shadow}`,
+          : `0 4px 16px ${systemColors.shadow}`,
       }}
     >
       {column.kind === 'custom' ? (
@@ -76,7 +79,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         className="column-header"
         ref={menuRef}
         style={{
-          borderTop: `2px solid ${CUSTOM_COLUMN_COLOR.accent}`,
+          borderTop: `2px solid ${customColors.accent}`,
           cursor: 'grab',
           touchAction: 'none',
           position: 'relative',
@@ -87,7 +90,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
             width: 7,
             height: 7,
             borderRadius: '50%',
-            background: CUSTOM_COLUMN_COLOR.accent,
+            background: customColors.accent,
             flexShrink: 0,
           }} />
           {renaming ? (
@@ -114,14 +117,14 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
               }}
             />
           ) : (
-            <h3 style={{ color: CUSTOM_COLUMN_COLOR.accent, flex: 1 }}>
+            <h3 style={{ color: customColors.accent, flex: 1 }}>
               {column.title}
             </h3>
           )}
         </div>
         <span className="task-count" style={{
-          background: CUSTOM_COLUMN_COLOR.bg,
-          color: CUSTOM_COLUMN_COLOR.accent,
+          background: customColors.bg,
+          color: customColors.accent,
         }}>
           {tasks.length}
         </span>
@@ -191,9 +194,10 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         {...columnListeners}
         className="column-header"
         style={{
-          borderTop: `2px solid ${getColumnColor(column.systemKey).accent}`,
+          borderTop: `2px solid ${systemColors.accent}`,
           cursor: 'grab',
           touchAction: 'none',
+          position: 'relative',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -201,16 +205,16 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
             width: 7,
             height: 7,
             borderRadius: '50%',
-            background: getColumnColor(column.systemKey).accent,
+            background: systemColors.accent,
             flexShrink: 0,
           }} />
-          <h3 style={{ color: getColumnColor(column.systemKey).accent, flex: 1 }}>
+          <h3 style={{ color: systemColors.accent, flex: 1 }}>
             {column.title}
           </h3>
         </div>
         <span className="task-count" style={{
-          background: getColumnColor(column.systemKey).bg,
-          color: getColumnColor(column.systemKey).accent,
+          background: systemColors.bg,
+          color: systemColors.accent,
         }}>
           {tasks.length}
         </span>
