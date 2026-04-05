@@ -65,7 +65,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
       <div className="board">
         {board.columns
           .slice()
-          .sort((a, b) => a.order - b.order)
+          .sort((a, b) => a.position - b.position)
           .map(column => {
             const columnTasks = board.tasks
               .filter(t => t.columnId === column.id)
