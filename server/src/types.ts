@@ -31,7 +31,6 @@ export type Task = {
   doDate?: string      // YYYY-MM-DD — when user plans to work on it
   dueDate?: string     // YYYY-MM-DD — deadline
   priority?: TaskPriority
-  notes?: string
   assignee?: 'SL' | 'KL'
 
   manualOrder?: number  // for manual ordering in Today and custom columns
@@ -54,7 +53,6 @@ export type CreateTaskInput = {
   doDate?: string
   dueDate?: string
   priority?: TaskPriority
-  notes?: string
 }
 export type UpdateTaskInput = {
   title?: string
@@ -67,5 +65,4 @@ export type UpdateTaskInput = {
   priority?: TaskPriority
   completedAt?: string
   manualOrder?: number
-  notes?: string
 }
