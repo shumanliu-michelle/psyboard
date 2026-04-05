@@ -54,6 +54,7 @@ export type CreateTaskInput = {
   doDate?: string
   dueDate?: string
   priority?: TaskPriority
+  notes?: string
 }
 export type UpdateTaskInput = {
   title?: string
@@ -66,4 +67,5 @@ export type UpdateTaskInput = {
   priority?: TaskPriority
   completedAt?: string
   manualOrder?: number
+  notes?: string
 }
