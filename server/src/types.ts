@@ -31,7 +31,7 @@ export type Task = {
   doDate?: string | null  // YYYY-MM-DD — when user plans to work on it
   dueDate?: string | null // YYYY-MM-DD — deadline
   priority?: TaskPriority
-  assignee?: 'SL' | 'KL'
+  assignee?: 'SL' | 'KL' | undefined  // undefined means not assigned
 
   manualOrder?: number  // for manual ordering in Today and custom columns
 

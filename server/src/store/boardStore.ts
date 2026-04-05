@@ -10,6 +10,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, '..', '..', 'data')
 const BOARD_FILE = path.join(DATA_DIR, 'board.json')
 
+// Old column format had 'order' instead of 'position'
+type LegacyColumn = Omit<Column, 'position' | 'kind' | 'systemKey' | 'createdAt' | 'updatedAt'> & {
+  order?: number
+  kind?: ColumnKind
+  systemKey?: SystemKey
+  createdAt?: string
+  updatedAt?: string
+}
+
 function getTodayString(): string {
   const now = new Date()
   const year = now.getFullYear()
@@ -67,7 +76,8 @@ function migrateAndHeal(board: Board): Board {
     }
   }
 
-  const migratedColumns = board.columns.map(col => {
+  const migratedColumns = board.columns.map((col, index) => {
+    const legacyCol = col as unknown as LegacyColumn
     if (hasSystemColumns(col)) {
       const sysKey = col.id === BACKLOG_COLUMN_ID ? 'backlog'
         : col.id === TODAY_COLUMN_ID ? 'today' : 'done'
@@ -75,14 +85,14 @@ function migrateAndHeal(board: Board): Board {
         ...col,
         kind: 'system' as const,
         systemKey: sysKey as SystemKey,
-        position: col.position ?? (col as any).order ?? 0,
+        position: col.position ?? legacyCol.order ?? 0,
         updatedAt: now,
       }
     } else {
       return {
         ...col,
         kind: 'custom' as const,
-        position: col.position ?? (col as any).order ?? board.columns.indexOf(col),
+        position: col.position ?? legacyCol.order ?? index,
         updatedAt: now,
       }
     }
@@ -116,11 +126,15 @@ export function writeBoard(board: Board): void {
 
 // Column operations
 export function createColumn(title: string): Column {
+  if (RESERVED_NAMES.includes(title.trim())) {
+    throw new Error('Cannot create column with a reserved name')
+  }
+
   const board = readBoard()
   const now = new Date().toISOString()
   const column: Column = {
     id: randomUUID(),
-    title,
+    title: title.trim(),
     kind: 'custom',
     position: board.columns.length,
     createdAt: now,
@@ -252,8 +266,8 @@ export function updateTask(id: string, updates: {
   columnId?: string
   order?: number
   assignee?: 'SL' | 'KL' | null
-  doDate?: string
-  dueDate?: string
+  doDate?: string | null
+  dueDate?: string | null
   priority?: 'low' | 'medium' | 'high'
   completedAt?: string
   manualOrder?: number

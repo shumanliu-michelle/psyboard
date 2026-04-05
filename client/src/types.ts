@@ -31,7 +31,7 @@ export type Task = {
   doDate?: string | null
   dueDate?: string | null
   priority?: TaskPriority
-  assignee?: 'SL' | 'KL'
+  assignee?: 'SL' | 'KL' | undefined  // undefined means not assigned
 
   manualOrder?: number
 

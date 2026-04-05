@@ -14,7 +14,13 @@ router.post('/', (req, res) => {
   try {
     const column = createColumn(title.trim())
     res.status(201).json(column)
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      if (err.message === 'Cannot create column with a reserved name') {
+        res.status(400).json({ error: err.message })
+        return
+      }
+    }
     res.status(500).json({ error: 'Failed to create column' })
   }
 })

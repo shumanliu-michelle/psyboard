@@ -9,16 +9,18 @@ interface QuickAddFormProps {
 
 export function QuickAddForm({ columnId, onExpandToDrawer, onRefresh }: QuickAddFormProps) {
   const [title, setTitle] = useState('')
+  const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
+    setError('')
     try {
       await api.createTask({ title: title.trim(), columnId })
       setTitle('') // clear after add
       onRefresh?.()
     } catch (err) {
-      console.error('Failed to create task:', err)
+      setError(err instanceof Error ? err.message : 'Failed to create task')
     }
   }
 
@@ -28,7 +30,7 @@ export function QuickAddForm({ columnId, onExpandToDrawer, onRefresh }: QuickAdd
         type="text"
         placeholder="Task title"
         value={title}
-        onChange={e => setTitle(e.target.value)}
+        onChange={e => { setTitle(e.target.value); setError('') }}
         style={{
           width: '100%',
           border: '1px solid #bbb',
@@ -40,6 +42,9 @@ export function QuickAddForm({ columnId, onExpandToDrawer, onRefresh }: QuickAdd
           boxSizing: 'border-box',
         }}
       />
+      {error && (
+        <p style={{ color: '#dc2626', fontSize: '12px', margin: '0 0 8px 0' }}>{error}</p>
+      )}
       <div style={{ display: 'flex', gap: '8px' }}>
         <button
           type="submit"
