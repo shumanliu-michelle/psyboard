@@ -96,7 +96,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
 
       <DragOverlay>
         {activeTask ? (
-          <div className="task-card" style={{ opacity: 0.9, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+          <div className="task-card" data-dnd-drag-overlay style={{ opacity: 0.9, boxShadow: '0 4px 12px rgba(0,0,0,0.2)', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}>
             <div className="task-card-title">{activeTask.title}</div>
           </div>
         ) : null}
