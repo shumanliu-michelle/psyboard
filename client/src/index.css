@@ -22,7 +22,6 @@ body {
   min-height: 100vh;
   align-items: flex-start;
   overflow-x: auto;
-  touch-action: none;
   overscroll-behavior: contain;
 }
 

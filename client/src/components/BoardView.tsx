@@ -35,7 +35,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    document.body.style.overflow = ''
+    document.body.style.overflow = 'auto'
     const { active, over } = event
     setActiveTask(null)
 
