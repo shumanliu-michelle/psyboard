@@ -165,7 +165,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
           <div ref={popoverRef} style={{
             position: 'absolute',
             top: 0,
-            right: 28,
+            left: 28,
             background: 'white',
             border: '1px solid #e5e7eb',
             borderRadius: 6,
