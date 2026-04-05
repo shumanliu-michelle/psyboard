@@ -96,3 +96,33 @@ describe('POST /api/tasks — date validation', () => {
     expect(res.status).toBe(201)
   })
 })
+
+describe('PATCH /api/tasks/:id — date validation', () => {
+  beforeEach(() => {
+    const board: Board = {
+      columns: [
+        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
+        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
+        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
+      ],
+      tasks: [],
+    }
+    writeBoard(board)
+  })
+
+  async function createTask(title: string, columnId: string) {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title, columnId })
+    return res.body
+  }
+
+  it('returns 400 when dueDate is before doDate on update', async () => {
+    const task = await createTask('Test task', BACKLOG_COLUMN_ID)
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ doDate: '2026-04-10', dueDate: '2026-04-01' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('dueDate must be on or after doDate')
+  })
+})
