@@ -16,10 +16,12 @@
   --assignee-sl-text: #6366f1;
   --assignee-kl-bg: #dbeafe;
   --assignee-kl-text: #1e40af;
+  --text-primary: #111;
   --text-done: #9ca3af;
   --text-muted: #6b7280;
   --border-default: #d1d5db;
   --shadow-card: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-drawer: -4px 0 24px rgba(0,0,0,0.12);
 }
 
 * {
@@ -97,6 +99,7 @@ body {
   box-shadow: var(--shadow-card);
   cursor: grab;
   user-select: none;
+  -webkit-user-select: none;
   border-left: 3px solid transparent;
 }
 
@@ -107,7 +110,7 @@ body {
 .task-card-title {
   font-size: 13px;
   font-weight: 500;
-  color: #111;
+  color: var(--text-primary);
   word-break: break-word;
 }
 
@@ -142,11 +145,6 @@ body {
   touch-action: none;
 }
 
-.task-card {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
 /* === Add task / column forms === */
 .add-task-btn {
   width: 100%;
@@ -160,7 +158,7 @@ body {
 }
 
 .add-task-btn:hover {
-  color: #374151;
+  color: var(--text-muted);
 }
 
 .add-form {
@@ -263,7 +261,7 @@ body {
   background: white;
   width: 380px;
   height: 100%;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-drawer);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -281,7 +279,7 @@ body {
 .task-drawer-header h2 {
   font-size: 14px;
   font-weight: 600;
-  color: #111;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -298,7 +296,7 @@ body {
 
 .task-drawer-close:hover {
   background: #f3f4f6;
-  color: #374151;
+  color: var(--text-muted);
 }
 
 .task-drawer-body {
@@ -331,7 +329,7 @@ body {
   font-family: inherit;
   box-sizing: border-box;
   background: white;
-  color: #111;
+  color: var(--text-primary);
 }
 
 .task-drawer-field textarea {
@@ -482,7 +480,7 @@ body {
 .task-drawer-actions .btn-cancel {
   padding: 10px 16px;
   background: white;
-  color: #374151;
+  color: var(--text-muted);
   border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 14px;
