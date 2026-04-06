@@ -160,4 +160,21 @@ describe('broadcast() — tabId behavior', () => {
         })
     }, 50)
   })
+
+  it('SSE message includes summary field in the payload', (done) => {
+    const sseReq = request(app).get('/api/events').buffer(true)
+
+    setTimeout(() => {
+      request(app)
+        .post('/api/tasks')
+        .set('X-Tab-Id', 'test-tab')
+        .send({ title: 'Task X', columnId: BACKLOG_COLUMN_ID })
+        .end(() => {
+          sseReq.end((_err, res) => {
+            expect(res.text).toMatch(/"summary"/)
+            done()
+          })
+        })
+    }, 50)
+  })
 })

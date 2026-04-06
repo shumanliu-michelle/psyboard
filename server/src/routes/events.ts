@@ -1,5 +1,6 @@
 import express from 'express'
 import { Router } from 'express'
+import type { Task } from '../../types.js'
 
 const router = Router()
 
@@ -7,8 +8,13 @@ const router = Router()
 const clients = new Map<express.Response, { tabId: string }>()
 let clientIdCounter = 0
 
-export function broadcast(sourceTabId?: string): void {
-  const payload = JSON.stringify({ type: 'board_updated', tabId: sourceTabId ?? null })
+export type BroadcastSummary =
+  | { source: 'home_assistant'; created: string[]; skipped: string[] }
+  | { source: 'tab'; created: Task[]; updated: Task[]; deleted: string[] }
+  | null
+
+export function broadcast(sourceTabId?: string, summary?: BroadcastSummary): void {
+  const payload = JSON.stringify({ type: 'board_updated', tabId: sourceTabId ?? null, summary })
   const message = `data: ${payload}\n\n`
   console.log(`[SSE] Broadcasting to ${clients.size} client(s)${sourceTabId ? ` (source: ${sourceTabId})` : ''}`)
 
