@@ -24,6 +24,7 @@ export const KebabIcon = () => (
 export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [menuMode, setMenuMode] = useState<'main' | 'assign' | 'priority'>('main')
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
 
   function formatDate(dateStr: string): string {
@@ -201,7 +202,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
                   </>
                 )}
                 <button
-                  onClick={e => { e.stopPropagation(); setShowMenu(false); handleDelete() }}
+                  onClick={e => { e.stopPropagation(); setShowMenu(false); setConfirmDelete(true) }}
                   style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
                 >
                   Delete
@@ -278,6 +279,31 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
           </span>
         )}
       </div>
+
+      {confirmDelete && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+        }}>
+          <div style={{ background: 'white', borderRadius: 8, padding: 24, maxWidth: 300, boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}>
+            <p style={{ marginBottom: 16 }}>Delete "{task.title}"? This action cannot be undone.</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                style={{ padding: '6px 12px', cursor: 'pointer', borderRadius: 6, border: '1px solid var(--border-default)', background: 'white' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setConfirmDelete(false); handleDelete() }}
+                style={{ padding: '6px 12px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
