@@ -4,6 +4,8 @@ import { app } from '../index.js'
 import { DONE_COLUMN_ID, TODAY_COLUMN_ID, BACKLOG_COLUMN_ID } from '../types.js'
 import { writeBoard } from '../store/boardStore.js'
 import type { Board } from '../types.js'
+import { computeNextDate } from '../store/recurrence.js'
+import type { RecurrenceConfig } from '../types.js'
 
 describe('PATCH /api/tasks/:id — completedAt behavior', () => {
   beforeEach(() => {
@@ -124,5 +126,56 @@ describe('PATCH /api/tasks/:id — date validation', () => {
       .send({ doDate: '2026-04-10', dueDate: '2026-04-01' })
     expect(res.status).toBe(400)
     expect(res.body.error).toBe('dueDate must be on or after doDate')
+  })
+})
+
+describe('computeNextDate', () => {
+  const fixedConfig: RecurrenceConfig = { kind: 'daily', mode: 'fixed' }
+
+  it('returns next day for daily recurrence', () => {
+    const result = computeNextDate('2026-04-05', 'daily', fixedConfig, '2026-04-05T10:00:00Z')
+    expect(result).toBe('2026-04-06')
+  })
+
+  it('returns null when currentDate is null', () => {
+    const result = computeNextDate(null, 'daily', fixedConfig, '2026-04-05T10:00:00Z')
+    expect(result).toBeNull()
+  })
+
+  it('advances 7 days for weekly recurrence', () => {
+    const result = computeNextDate('2026-04-05', 'weekly', fixedConfig, '2026-04-05T10:00:00Z')
+    expect(result).toBe('2026-04-12')
+  })
+
+  it('advances to next month for monthly recurrence', () => {
+    const result = computeNextDate('2026-04-15', 'monthly', fixedConfig, '2026-04-15T10:00:00Z')
+    expect(result).toBe('2026-05-15')
+  })
+
+  it('caps day-of-month to last day if needed', () => {
+    const config: RecurrenceConfig = { kind: 'monthly', mode: 'fixed', dayOfMonth: 31 }
+    const result = computeNextDate('2026-01-31', 'monthly', config, '2026-01-31T10:00:00Z')
+    // Feb doesn't have 31 days — should cap to 28
+    expect(result).toBe('2026-02-28')
+  })
+
+  it('advances by intervalDays for interval_days recurrence', () => {
+    const config: RecurrenceConfig = { kind: 'interval_days', mode: 'fixed', intervalDays: 5 }
+    const result = computeNextDate('2026-04-05', 'interval_days', config, '2026-04-05T10:00:00Z')
+    expect(result).toBe('2026-04-10')
+  })
+
+  it('skips weekends for weekdays recurrence', () => {
+    // 2026-04-03 is a Friday
+    const result = computeNextDate('2026-04-03', 'weekdays', fixedConfig, '2026-04-03T10:00:00Z')
+    // Next weekday after Friday is Monday April 6
+    expect(result).toBe('2026-04-06')
+  })
+
+  it('returns next cron occurrence for cron kind', () => {
+    const config: RecurrenceConfig = { kind: 'cron', mode: 'fixed', cronExpr: '0 9 * * *' }
+    const result = computeNextDate('2026-04-05', 'cron', config, '2026-04-05T10:00:00Z')
+    // 10am on Apr 5 is past 9am, so next is 9am on Apr 6
+    expect(result).toBe('2026-04-06')
   })
 })
