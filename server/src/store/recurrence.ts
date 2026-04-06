@@ -11,35 +11,37 @@ export function computeNextDate(
 
   switch (kind) {
     case 'daily': {
-      const base = new Date(currentDate + 'T00:00:00')
-      base.setDate(base.getDate() + 1)
+      const base = new Date(currentDate + 'T00:00:00Z')
+      base.setUTCDate(base.getUTCDate() + 1)
       return base.toISOString().slice(0, 10)
     }
     case 'weekly': {
-      const base = new Date(currentDate + 'T00:00:00')
-      base.setDate(base.getDate() + 7)
+      const base = new Date(currentDate + 'T00:00:00Z')
+      base.setUTCDate(base.getUTCDate() + 7)
       return base.toISOString().slice(0, 10)
     }
     case 'monthly': {
-      const base = new Date(currentDate + 'T00:00:00')
-      const targetDay = config.dayOfMonth ?? base.getDate()
-      const currentMonth = base.getMonth()
+      const base = new Date(currentDate + 'T00:00:00Z')
+      const targetDay = config.dayOfMonth ?? base.getUTCDate()
+      const currentMonth = base.getUTCMonth()
       const targetMonth = currentMonth + 1
-      const targetYear = targetMonth > 11 ? base.getFullYear() + 1 : base.getFullYear()
+      const targetYear = targetMonth > 11 ? base.getUTCFullYear() + 1 : base.getUTCFullYear()
       const actualTargetMonth = targetMonth % 12
-      const lastDay = new Date(targetYear, actualTargetMonth + 1, 0).getDate()
-      const result = new Date(targetYear, actualTargetMonth, Math.min(targetDay, lastDay))
+      const lastDay = new Date(Date.UTC(targetYear, actualTargetMonth + 1, 0)).getUTCDate()
+      const result = new Date(Date.UTC(targetYear, actualTargetMonth, Math.min(targetDay, lastDay)))
       return result.toISOString().slice(0, 10)
     }
     case 'interval_days': {
-      const base = new Date(currentDate + 'T00:00:00')
-      base.setDate(base.getDate() + (config.intervalDays ?? 1))
+      const intervalDays = config.intervalDays ?? 1
+      if (intervalDays < 1) return null
+      const base = new Date(currentDate + 'T00:00:00Z')
+      base.setUTCDate(base.getUTCDate() + intervalDays)
       return base.toISOString().slice(0, 10)
     }
     case 'weekdays': {
-      const base = new Date(currentDate + 'T00:00:00')
-      do { base.setDate(base.getDate() + 1) }
-      while (base.getDay() === 0 || base.getDay() === 6)
+      const base = new Date(currentDate + 'T00:00:00Z')
+      do { base.setUTCDate(base.getUTCDate() + 1) }
+      while (base.getUTCDay() === 0 || base.getUTCDay() === 6)
       return base.toISOString().slice(0, 10)
     }
     case 'cron': {
