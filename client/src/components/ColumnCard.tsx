@@ -121,11 +121,10 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
             <KebabIcon />
           </button>
           {showMenu && (
-            <div style={{
+            <div className="column-menu-popover" style={{
               position: 'absolute',
               top: 20,
               right: 0,
-              background: 'white',
               border: '1px solid #e5e7eb',
               borderRadius: 6,
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
@@ -143,6 +142,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
                 Rename
               </button>
               <button
+                className="delete-btn"
                 onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
                 style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
               >

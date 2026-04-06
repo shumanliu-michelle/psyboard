@@ -135,13 +135,17 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         ...style,
         display: 'flex',
         flexDirection: 'row',
-        borderLeft: isOverdue ? '4px solid #dc2626' : task.priority ? `3px solid ${priorityColor}` : '3px solid #e2e8f0',
+        borderLeft: isOverdue
+          ? '4px solid #dc2626'
+          : task.priority
+            ? `3px solid ${priorityColor}`
+            : '3px solid var(--border-default)',
         background: isOverdue ? '#fee2e2' : priorityBg,
         cursor: 'grab',
         touchAction: 'none',
         opacity: dimmed ? 0.3 : 1,
       }}
-      className={`task-card${isDragging ? ' dragging' : ''}${isCompleted ? ' done' : ''}${dimmed ? ' dimmed' : ''}`}
+      className={`task-card${isDragging ? ' dragging' : ''}${isCompleted ? ' done' : ''}${dimmed ? ' dimmed' : ''}${isOverdue ? ' overdue' : ''}${task.priority ? ` priority-${task.priority}` : ''}`}
       {...attributes}
       {...listeners}
       onClick={() => !isDragging && onOpenEdit()}

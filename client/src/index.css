@@ -848,3 +848,55 @@ button.filter-chip[data-assignee="none"].selected {
 .task-card.dimmed {
   opacity: 0.3;
 }
+
+/* Dark mode priority and overdue overrides */
+.dark .task-card.overdue {
+  background: #450a0a;
+  border-left-color: #f87171;
+}
+
+.dark .task-card.overdue .task-card-title {
+  color: #fca5a5;
+}
+
+.dark .task-card.priority-high {
+  background: #450a0a;
+  border-left-color: #f87171;
+}
+
+.dark .task-card.priority-medium {
+  background: #451a03;
+  border-left-color: #fbbf24;
+}
+
+.dark .task-card.priority-low {
+  background: #052e16;
+  border-left-color: #4ade80;
+}
+
+/* Kebab menu */
+.column-menu-popover {
+  background: white;
+}
+
+.dark .column-menu-popover {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.dark .column-menu-popover button {
+  color: #f1f5f9;
+}
+
+.dark .column-menu-popover button:hover {
+  background: #334155;
+}
+
+.dark .column-menu-popover button.delete-btn {
+  color: #f87171;
+}
+
+/* Drop target dark mode */
+.dark .column-drop-target {
+  background: #1e3a5f;
+}
