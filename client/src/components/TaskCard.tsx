@@ -133,8 +133,9 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         justifyContent: 'center',
         minWidth: 0,
       }}>
-        <div className="task-card-title" style={{ color: isOverdue ? '#dc2626' : undefined }} onDoubleClick={() => onOpenEdit()}>
-          {task.title}
+        <div className="task-card-title" style={{ color: isOverdue ? '#dc2626' : undefined, display: 'flex', alignItems: 'center', gap: 4 }} onDoubleClick={() => onOpenEdit()}>
+          {task.recurrence && '🔄'}
+          <span>{task.title}</span>
         </div>
         {task.description && (
           <div className="task-description">
