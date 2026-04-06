@@ -242,6 +242,40 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         </SortableContext>
       </div>
 
+      {/* Done column pagination footer */}
+      {isDoneColumn && olderDoneTasksCount > 0 && (
+        <div style={{
+          padding: '10px 12px',
+          borderTop: '1px solid #e5e7eb',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>
+            Showing last {(donePage + 1) * DONE_PAGE_DAYS} days · {olderDoneTasksCount} older {olderDoneTasksCount === 1 ? 'task' : 'tasks'}
+          </div>
+          <button
+            onClick={() => setDonePage(p => p + 1)}
+            style={{
+              background: 'none',
+              border: '1px solid #cbd5e1',
+              borderRadius: 6,
+              padding: '6px 14px',
+              fontSize: 12,
+              color: '#475569',
+              cursor: 'pointer',
+            }}
+          >
+            Show older tasks
+          </button>
+        </div>
+      )}
+
+      {/* Empty state: done column with no tasks */}
+      {isDoneColumn && tasks.length === 0 && (
+        <div style={{ padding: '24px 12px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+          No completed tasks yet
+        </div>
+      )}
+
       {column.systemKey !== 'done' && (
         <QuickAddForm
           columnId={column.id}
