@@ -1,11 +1,11 @@
-import { Router } from 'express'
+import { Router, type Request } from 'express'
 import { createTask, updateTask, deleteTask, readBoard, reorderTasks } from '../store/boardStore.js'
 import type { CreateTaskInput, UpdateTaskInput, Task } from '../types.js'
 import { CronExpressionParser } from 'cron-parser'
 import type { RecurrenceConfig } from '../types.js'
 import { broadcast } from './events.js'
 
-function shouldBroadcast(req: express.Request): boolean {
+function shouldBroadcast(req: Request): boolean {
   const p = req.query.broadcast
   if (p === 'false') return false
   return true // default: broadcast
