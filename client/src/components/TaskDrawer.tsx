@@ -41,9 +41,7 @@ export function TaskDrawer({
     mode === 'edit' && task ? task.assignee : undefined
   )
   const [recurrence, setRecurrence] = useState<RecurrenceConfig | undefined>(() =>
-    mode === 'edit' && task && task.recurrence
-      ? { ...task.recurrence, mode: task.recurrence.mode ?? 'fixed' }
-      : undefined
+    mode === 'edit' && task ? task.recurrence : undefined
   )
   const [recurrenceError, setRecurrenceError] = useState('')
   const [dateError, setDateError] = useState('')
@@ -317,7 +315,11 @@ export function TaskDrawer({
               onChange={e => {
                 const kind = e.target.value as RecurrenceKind | ''
                 if (!kind) { setRecurrence(undefined); return }
-                setRecurrence({ kind, mode: recurrence?.mode ?? 'fixed' })
+                setRecurrence({
+                  kind,
+                  mode: recurrence?.mode ?? 'fixed',
+                  ...(kind === 'interval_days' ? { intervalDays: 1 } : {}),
+                })
               }}
               disabled={isCompleted}
             >
@@ -345,7 +347,7 @@ export function TaskDrawer({
                   disabled={isCompleted}
                 />
               </div>
-              <span style={{ alignSelf: 'flex-end', marginBottom: '4px' }}>days</span>
+              <span style={{ alignSelf: 'center'}}>days</span>
             </div>
           )}
 
