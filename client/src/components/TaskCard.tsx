@@ -32,6 +32,22 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
+  function formatCompletedRelative(isoStr: string): string {
+    const date = new Date(isoStr)
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const completedDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const diffDays = Math.round((today.getTime() - completedDay.getTime()) / (1000 * 60 * 60 * 24))
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  function formatCompletedTime(isoStr: string): string {
+    const date = new Date(isoStr)
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  }
+
   // Close menu on click outside
   useEffect(() => {
     if (!showMenu) return
@@ -142,9 +158,14 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
             {task.description}
           </div>
         )}
-        {task.dueDate && (
+        {task.dueDate && !isCompleted && (
           <div style={{ fontSize: 11, color: isOverdue ? '#dc2626' : '#94a3b8', marginTop: 2 }}>
             Due: {formatDate(task.dueDate)}
+          </div>
+        )}
+        {isCompleted && task.completedAt && (
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+            Completed {formatCompletedRelative(task.completedAt)} {formatCompletedTime(task.completedAt)}
           </div>
         )}
       </div>
