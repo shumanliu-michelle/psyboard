@@ -114,7 +114,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         ...style,
         display: 'flex',
         flexDirection: 'row',
-        borderLeft: isOverdue ? '4px solid #dc2626' : task.priority ? `3px solid ${priorityColor}` : '3px solid transparent',
+        borderLeft: isOverdue ? '4px solid #dc2626' : task.priority ? `3px solid ${priorityColor}` : '3px solid #e2e8f0',
         background: isOverdue ? '#fee2e2' : priorityBg,
         cursor: 'grab',
         touchAction: 'none',
