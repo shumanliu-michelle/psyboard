@@ -29,6 +29,10 @@ export default function App() {
     es.onmessage = () => {
       loadBoard()
     }
+    es.onerror = () => {
+      // EventSource auto-reconnects by default
+      console.error('SSE connection error')
+    }
     return () => {
       es.close()
     }
