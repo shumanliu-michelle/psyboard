@@ -52,4 +52,13 @@ describe('Toast', () => {
     render(<Toast visible={true} summary={summary} onDismiss={vi.fn()} />)
     expect(screen.getByText('+1')).toBeInTheDocument()
   })
+
+  it('renders updated task titles with ~ marker', () => {
+    const task = { id: '1', title: 'Morning standup', columnId: 'today', order: 0, createdAt: '', updatedAt: '' }
+    const summary = { source: 'tab' as const, created: [], updated: [task], deleted: [] }
+    render(<Toast visible={true} summary={summary} onDismiss={vi.fn()} />)
+    expect(screen.getByText('Board updated')).toBeInTheDocument()
+    expect(screen.getByText('Morning standup')).toBeInTheDocument()
+    expect(screen.getByText('~1')).toBeInTheDocument()
+  })
 })

@@ -83,6 +83,16 @@ export function Toast({ summary, visible, onDismiss }: ToastProps) {
           ))}
         </div>
       )}
+      {summary !== null && summary.source === 'tab' && summary.updated.length > 0 && (
+        <div className="toast-task-list">
+          {summary.updated.map((item, i) => (
+            <div key={i} className="toast-task-item">
+              <span className="toast-task-marker toast-task-marker-updated">~</span>
+              <span>{item.title}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
