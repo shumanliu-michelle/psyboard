@@ -195,6 +195,7 @@ describe('TaskDrawer — recurring task delete', () => {
     const task = { ...mockTask, recurrence: { kind: 'daily' as const, mode: 'fixed' as const }, id: 'task-recurring' }
     vi.mocked(api.updateTask).mockResolvedValue(task as Task)
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     render(<TaskDrawer mode="edit" task={task as Task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: /delete all future/i }))
@@ -212,6 +213,7 @@ describe('TaskDrawer — recurring task delete', () => {
     const task = { ...mockTask, recurrence: { kind: 'daily' as const, mode: 'fixed' as const }, id: 'task-recurring' }
     vi.mocked(api.updateTask).mockResolvedValue(task as Task)
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     render(<TaskDrawer mode="edit" task={task as Task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: /delete this occurrence/i }))
@@ -225,7 +227,7 @@ describe('TaskDrawer — recurring task delete', () => {
     })
   })
 
-  it('non-recurring task deletes without confirm dialog', async () => {
+  it('non-recurring task shows confirm dialog before delete', async () => {
     const task = { ...mockTask, id: 'task-normal' }
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
@@ -233,7 +235,7 @@ describe('TaskDrawer — recurring task delete', () => {
     render(<TaskDrawer mode="edit" task={task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: /delete task/i }))
 
-    expect(window.confirm).not.toHaveBeenCalled()
+    expect(window.confirm).toHaveBeenCalled()
     await waitFor(() => {
       expect(vi.mocked(api.deleteTask)).toHaveBeenCalledWith('task-normal')
     })

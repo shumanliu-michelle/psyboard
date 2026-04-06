@@ -142,23 +142,41 @@ export function TaskDrawer({
 
   async function handleDeleteSingle() {
     if (!task) return
-    // Move to Done first (creates next occurrence), then delete this task
-    await api.updateTask(task.id, { columnId: DONE_COLUMN_ID })
-    await api.deleteTask(task.id)
-    onSaved()
-    onClose()
+    if (!window.confirm(task.recurrence
+      ? 'Delete this occurrence? A new task will be created for the next occurrence.'
+      : 'Delete this task? This action cannot be undone.')) return
+    setSaving(true)
+    try {
+      // Move to Done first (creates next occurrence), then delete this task
+      await api.updateTask(task.id, { columnId: DONE_COLUMN_ID })
+      await api.deleteTask(task.id)
+      onSaved()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete task')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleDeleteAll() {
     if (!task) return
-    // Suppress next occurrence (completes without creating next), then delete
-    await api.updateTask(task.id, {
-      columnId: DONE_COLUMN_ID,
-      suppressNextOccurrence: true,
-    })
-    await api.deleteTask(task.id)
-    onSaved()
-    onClose()
+    if (!window.confirm('Delete all future occurrences of this recurring task?')) return
+    setSaving(true)
+    try {
+      // Suppress next occurrence (completes without creating next), then delete
+      await api.updateTask(task.id, {
+        columnId: DONE_COLUMN_ID,
+        suppressNextOccurrence: true,
+      })
+      await api.deleteTask(task.id)
+      onSaved()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete task')
+    } finally {
+      setSaving(false)
+    }
   }
 
   function togglePriority(p: TaskPriority) {
@@ -418,12 +436,11 @@ export function TaskDrawer({
               </button>
             )}
             {task.recurrence ? (
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <>
                 <button
                   className="btn-danger-full btn-delete"
                   onClick={handleDeleteSingle}
                   disabled={saving}
-                  style={{ flex: 1 }}
                 >
                   Delete this occurrence
                 </button>
@@ -431,11 +448,10 @@ export function TaskDrawer({
                   className="btn-danger-full btn-delete"
                   onClick={handleDeleteAll}
                   disabled={saving}
-                  style={{ flex: 1 }}
                 >
                   Delete all future occurrences
                 </button>
-              </div>
+              </>
             ) : (
               <button
                 className="btn-danger-full btn-delete"
