@@ -136,31 +136,31 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     const overTask = board.tasks.find(t => t.id === over.id)
     const targetColumnId = overTask ? overTask.columnId : (over.id as string)
 
-    // If dropped on a column (empty area)
-    if (board.columns.find(c => c.id === targetColumnId)) {
-      if (task.columnId !== targetColumnId) {
-        // Block moving out of Today if it would be immediately reconcile-promoted back
-        const today = getToday()
-        const wouldReconcile =
-          targetColumnId !== DONE_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID &&
-          (task.doDate && task.doDate <= today || (task.doDate == null && task.dueDate != null && task.dueDate <= today))
-        if (wouldReconcile) {
-          setBlockedDrag({ task, targetColumnId })
-          setBlockedDragDoDate(task.doDate ?? '')
-          setBlockedDragDueDate(task.dueDate ?? '')
-          setBlockedDragDateError('')
-          return
-        }
-        // Move to new column
-        const targetColumn = board.columns.find(c => c.id === targetColumnId)
-        if (targetColumn && targetColumn.systemKey !== 'done' && targetColumn.systemKey !== 'backlog') {
-          const targetTasks = board.tasks
-            .filter(t => t.columnId === targetColumnId)
-            .sort((a, b) => a.order - b.order)
-          api.reorderTasks(taskId, targetColumnId, targetTasks.length).then(onRefresh).catch(console.error)
-        } else {
-          api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
-        }
+    if (!board.columns.find(c => c.id === targetColumnId)) return // target column not fount
+
+    // If dropped on a different column (empty area)
+    if (task.columnId !== targetColumnId) {
+      // Block moving out of Today if it would be immediately reconcile-promoted back
+      const today = getToday()
+      const wouldReconcile =
+        targetColumnId !== DONE_COLUMN_ID && targetColumnId !== TODAY_COLUMN_ID &&
+        (task.doDate && task.doDate <= today || (task.doDate == null && task.dueDate != null && task.dueDate <= today))
+      if (wouldReconcile) {
+        setBlockedDrag({ task, targetColumnId })
+        setBlockedDragDoDate(task.doDate ?? '')
+        setBlockedDragDueDate(task.dueDate ?? '')
+        setBlockedDragDateError('')
+        return
+      }
+      // Move to new column
+      const targetColumn = board.columns.find(c => c.id === targetColumnId)
+      if (targetColumn && targetColumn.systemKey !== 'done' && targetColumn.systemKey !== 'backlog') {
+        const targetTasks = board.tasks
+          .filter(t => t.columnId === targetColumnId)
+          .sort((a, b) => a.order - b.order)
+        api.reorderTasks(taskId, targetColumnId, targetTasks.length).then(onRefresh).catch(console.error)
+      } else {
+        api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
       }
       return
     }
