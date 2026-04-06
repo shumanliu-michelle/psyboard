@@ -179,3 +179,126 @@ describe('computeNextDate', () => {
     expect(result).toBe('2026-04-06')
   })
 })
+
+describe('POST /api/tasks — recurrence validation', () => {
+  beforeEach(() => {
+    const board: Board = {
+      columns: [
+        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
+        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
+        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
+      ],
+      tasks: [],
+    }
+    writeBoard(board)
+  })
+
+  it('returns 400 when recurrence set but no doDate or dueDate', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'Recurring task', columnId: BACKLOG_COLUMN_ID, recurrence: { kind: 'daily', mode: 'fixed' } })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('Recurring tasks must have at least a do date or due date.')
+  })
+
+  it('returns 400 when interval_days has intervalDays < 1', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({
+        title: 'Bad interval',
+        columnId: BACKLOG_COLUMN_ID,
+        doDate: '2026-04-05',
+        recurrence: { kind: 'interval_days', mode: 'fixed', intervalDays: 0 },
+      })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('Interval must be at least 1 day.')
+  })
+
+  it('returns 400 when cron kind has invalid cronExpr', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({
+        title: 'Bad cron',
+        columnId: BACKLOG_COLUMN_ID,
+        doDate: '2026-04-05',
+        recurrence: { kind: 'cron', mode: 'fixed', cronExpr: 'not-a-cron' },
+      })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('Invalid recurrence rule.')
+  })
+
+  it('accepts valid recurrence with doDate', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({
+        title: 'Valid daily',
+        columnId: BACKLOG_COLUMN_ID,
+        doDate: '2026-04-05',
+        recurrence: { kind: 'daily', mode: 'fixed' },
+      })
+    expect(res.status).toBe(201)
+    expect(res.body.recurrence).toEqual({ kind: 'daily', mode: 'fixed' })
+  })
+
+  it('accepts valid recurrence with dueDate only', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({
+        title: 'Valid daily',
+        columnId: BACKLOG_COLUMN_ID,
+        dueDate: '2026-04-05',
+        recurrence: { kind: 'daily', mode: 'fixed' },
+      })
+    expect(res.status).toBe(201)
+  })
+})
+
+describe('PATCH /api/tasks/:id — recurrence validation', () => {
+  beforeEach(() => {
+    const board: Board = {
+      columns: [
+        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
+        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
+        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
+      ],
+      tasks: [],
+    }
+    writeBoard(board)
+  })
+
+  async function createTask(title: string, columnId: string) {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title, columnId })
+    return res.body
+  }
+
+  it('returns 400 when recurrence added but no doDate or dueDate', async () => {
+    const task = await createTask('Task', BACKLOG_COLUMN_ID)
+    expect(task.id).toBeDefined()
+
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ recurrence: { kind: 'daily', mode: 'fixed' } })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('Recurring tasks must have at least a do date or due date.')
+  })
+
+  it('can clear recurrence by setting it to null', async () => {
+    const task = await request(app)
+      .post('/api/tasks')
+      .send({
+        title: 'Task',
+        columnId: BACKLOG_COLUMN_ID,
+        doDate: '2026-04-05',
+        recurrence: { kind: 'daily', mode: 'fixed' },
+      })
+    expect(task.status).toBe(201)
+
+    const res = await request(app)
+      .patch(`/api/tasks/${task.body.id}`)
+      .send({ recurrence: null })
+    expect(res.status).toBe(200)
+    expect(res.body.recurrence).toBeUndefined()
+  })
+})

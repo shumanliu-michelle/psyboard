@@ -235,7 +235,8 @@ export function createTask(
   doDate?: string | null,
   dueDate?: string | null,
   priority?: 'low' | 'medium' | 'high',
-  assignee?: 'SL' | 'KL'
+  assignee?: 'SL' | 'KL',
+  recurrence?: { kind: string; mode: string; intervalDays?: number; cronExpr?: string; daysOfWeek?: number[]; dayOfMonth?: number; timezone?: string }
 ): Task {
   const board = readBoard()
   const tasksInColumn = board.tasks.filter(t => t.columnId === columnId)
@@ -252,6 +253,9 @@ export function createTask(
     assignee,
     createdAt: now,
     updatedAt: now,
+  }
+  if (recurrence) {
+    task.recurrence = recurrence as Task['recurrence']
   }
   board.tasks.push(task)
 
@@ -275,6 +279,7 @@ export function updateTask(id: string, updates: {
   dueDate?: string | null
   priority?: 'low' | 'medium' | 'high'
   completedAt?: string
+  recurrence?: { kind: string; mode: string; intervalDays?: number; cronExpr?: string; daysOfWeek?: number[]; dayOfMonth?: number; timezone?: string } | null
 }): Task {
   const board = readBoard()
   const task = board.tasks.find(t => t.id === id)
@@ -308,6 +313,7 @@ export function updateTask(id: string, updates: {
   if (updates.dueDate !== undefined) task.dueDate = updates.dueDate
   if (updates.priority !== undefined) task.priority = updates.priority === null ? undefined : updates.priority
   if (updates.completedAt !== undefined) task.completedAt = updates.completedAt
+  if (updates.recurrence !== undefined) task.recurrence = updates.recurrence === null ? undefined : updates.recurrence
   task.updatedAt = new Date().toISOString()
 
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
