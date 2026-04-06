@@ -24,6 +24,16 @@ export default function App() {
     loadBoard()
   }, [])
 
+  useEffect(() => {
+    const es = new EventSource('/api/events')
+    es.onmessage = () => {
+      loadBoard()
+    }
+    return () => {
+      es.close()
+    }
+  }, [])
+
   if (loading) {
     return <div style={{ padding: 24, color: '#666' }}>Loading...</div>
   }
