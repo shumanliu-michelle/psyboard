@@ -53,6 +53,11 @@ export function TaskDrawer({
 
   const isCompleted = mode === 'edit' && task?.columnId === DONE_COLUMN_ID
 
+  function formatDrawerDate(isoStr: string): string {
+    const date = new Date(isoStr)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
+  }
+
   // Escape key handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -427,6 +432,18 @@ export function TaskDrawer({
           {recurrenceError && <p className="drawer-error">{recurrenceError}</p>}
           {dateError && <p className="drawer-error">{dateError}</p>}
           {error && <p className="drawer-error">{error}</p>}
+
+          {mode === 'edit' && task && (
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #e5e7eb', fontSize: 11, color: 'var(--text-muted)' }}>
+              <div>Created {formatDrawerDate(task.createdAt)}</div>
+              {isCompleted && task.completedAt && (
+                <div>Completed {formatDrawerDate(task.completedAt)}</div>
+              )}
+              {!isCompleted && (
+                <div>Updated {formatDrawerDate(task.updatedAt)}</div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="task-drawer-actions">
@@ -455,7 +472,7 @@ export function TaskDrawer({
                 Mark done
               </button>
             )}
-            {task.recurrence ? (
+            {task.recurrence && !isCompleted ? (
               <>
                 <button
                   className="btn-danger-full btn-delete"
