@@ -158,13 +158,15 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         alignItems: 'flex-end',
         flexShrink: 0,
       }}>
-        <button
-          onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}
-          aria-label="Menu"
-        >
-          <KebabIcon />
-        </button>
+        {!isCompleted && (
+          <button
+            onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '2px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}
+            aria-label="Menu"
+          >
+            <KebabIcon />
+          </button>
+        )}
         {showMenu && (
           <div ref={popoverRef} style={{
             position: 'absolute',
@@ -180,28 +182,24 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
           }}>
             {menuMode === 'main' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {!isCompleted && (
-                  <>
-                    <button
-                      onClick={e => { e.stopPropagation(); setMenuMode('assign') }}
-                      style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-                    >
-                      Assign
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); setMenuMode('priority') }}
-                      style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-                    >
-                      Priority
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
-                      style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
-                    >
-                      Edit
-                    </button>
-                  </>
-                )}
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuMode('assign') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                >
+                  Assign
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuMode('priority') }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                >
+                  Priority
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setShowMenu(false); onOpenEdit() }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#374151' }}
+                >
+                  Edit
+                </button>
                 <button
                   onClick={e => { e.stopPropagation(); setShowMenu(false); setConfirmDelete(true) }}
                   style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#dc2626' }}
