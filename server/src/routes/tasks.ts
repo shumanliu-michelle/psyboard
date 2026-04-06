@@ -1,11 +1,47 @@
 import { Router } from 'express'
 import { createTask, updateTask, deleteTask, readBoard, reorderTasks } from '../store/boardStore.js'
-import type { CreateTaskInput, UpdateTaskInput } from '../types.js'
+import type { CreateTaskInput, UpdateTaskInput, Task } from '../types.js'
+import { CronExpressionParser } from 'cron-parser'
+import type { RecurrenceConfig } from '../types.js'
+
+function validateRecurrenceInput(
+  recurrence: RecurrenceConfig | undefined | null,
+  doDate?: string | null,
+  dueDate?: string | null,
+  existingTask?: Task | null
+): string | null {
+  if (recurrence === undefined || recurrence === null) return null
+  const hasDoDate = doDate && doDate.length > 0
+  const hasDueDate = dueDate && dueDate.length > 0
+  if (!hasDoDate && !hasDueDate && existingTask) {
+    const taskHasDoDate = existingTask.doDate && existingTask.doDate.length > 0
+    const taskHasDueDate = existingTask.dueDate && existingTask.dueDate.length > 0
+    if (!taskHasDoDate && !taskHasDueDate) {
+      return 'Recurring tasks must have at least a do date or due date.'
+    }
+  } else if (!hasDoDate && !hasDueDate) {
+    return 'Recurring tasks must have at least a do date or due date.'
+  }
+  if (recurrence.kind === 'interval_days') {
+    if (!recurrence.intervalDays || recurrence.intervalDays < 1) {
+      return 'Interval must be at least 1 day.'
+    }
+  }
+  if (recurrence.kind === 'cron') {
+    if (!recurrence.cronExpr) return 'Invalid recurrence rule.'
+    try {
+      CronExpressionParser.parse(recurrence.cronExpr, { currentDate: new Date() })
+    } catch {
+      return 'Invalid recurrence rule.'
+    }
+  }
+  return null
+}
 
 const router = Router()
 
 router.post('/', (req, res) => {
-  const { title, columnId, description, doDate, dueDate, priority, assignee } = req.body as CreateTaskInput
+  const { title, columnId, description, doDate, dueDate, priority, assignee, recurrence } = req.body as CreateTaskInput
 
   // Validate
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
@@ -37,6 +73,13 @@ router.post('/', (req, res) => {
     return
   }
 
+  // Validate recurrence
+  const validationError = validateRecurrenceInput(recurrence, doDate, dueDate)
+  if (validationError) {
+    res.status(400).json({ error: validationError })
+    return
+  }
+
   // Verify column exists
   const board = readBoard()
   const column = board.columns.find(c => c.id === columnId)
@@ -53,7 +96,8 @@ router.post('/', (req, res) => {
       doDate?.trim() || null,
       dueDate?.trim() || null,
       priority,
-      assignee
+      assignee ?? undefined,
+      recurrence
     )
     res.status(201).json(task)
   } catch (err) {
@@ -90,6 +134,20 @@ router.patch('/:id', (req, res) => {
     return
   }
 
+  // Validate recurrence
+  const board = readBoard()
+  const existingTask = board.tasks.find(t => t.id === id) ?? undefined
+  const patchValidationError = validateRecurrenceInput(
+    updates.recurrence,
+    updates.doDate,
+    updates.dueDate,
+    existingTask
+  )
+  if (patchValidationError) {
+    res.status(400).json({ error: patchValidationError })
+    return
+  }
+
   // If changing columnId, verify it exists
   if (updates.columnId) {
     const board = readBoard()
@@ -101,7 +159,19 @@ router.patch('/:id', (req, res) => {
   }
 
   try {
-    const task = updateTask(id, updates)
+    const task = updateTask(id, {
+      title: updates.title,
+      description: updates.description,
+      columnId: updates.columnId,
+      order: updates.order,
+      assignee: updates.assignee ?? undefined,
+      doDate: updates.doDate,
+      dueDate: updates.dueDate,
+      priority: updates.priority ?? undefined,
+      completedAt: updates.completedAt,
+      recurrence: updates.recurrence as import('../types.js').RecurrenceConfig | null | undefined,
+      suppressNextOccurrence: updates.suppressNextOccurrence,
+    })
     res.json(task)
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes('not found')) {
