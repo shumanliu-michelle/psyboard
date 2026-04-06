@@ -473,10 +473,10 @@ describe('PATCH /api/tasks/:id — expectedUpdatedAt (optimistic locking)', () =
     writeBoard(createTestBoard())
   })
 
-  async function createTask(title: string, columnId: string) {
+  async function createTask(title: string, columnId: string, extra?: Record<string, unknown>) {
     const res = await request(app)
       .post('/api/tasks')
-      .send({ title, columnId })
+      .send({ title, columnId, ...extra })
     return res.body
   }
 
