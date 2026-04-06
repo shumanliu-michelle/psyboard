@@ -52,7 +52,7 @@ export function QuickAddForm({ columnId, onExpandToDrawer, onRefresh }: QuickAdd
           style={{
             flex: 1,
             padding: '7px',
-            background: '#333',
+            background: '#6366f1',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
@@ -75,8 +75,8 @@ export function QuickAddForm({ columnId, onExpandToDrawer, onRefresh }: QuickAdd
           style={{
             padding: '7px 12px',
             background: 'transparent',
-            color: '#666',
-            border: '1px solid #ccc',
+            color: '#6366f1',
+            border: '1px solid #a5b4fc',
             borderRadius: '4px',
             fontSize: '13px',
             cursor: 'pointer',
