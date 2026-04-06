@@ -85,3 +85,9 @@ export type UpdateTaskInput = {
   suppressNextOccurrence?: boolean
   expectedUpdatedAt?: string  // optimistic locking — reject if task was modified since
 }
+
+// BroadcastSummary travels over SSE to tell clients what changed
+export type BroadcastSummary =
+  | { source: 'home_assistant'; created: string[]; skipped: string[] }
+  | { source: 'tab'; created: Task[]; updated: Task[]; deleted: string[] }
+  | null

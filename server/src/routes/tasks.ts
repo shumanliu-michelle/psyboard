@@ -4,7 +4,7 @@ import { createTask, updateTask, deleteTask, readBoard, reorderTasks, ConflictEr
 import type { CreateTaskInput, UpdateTaskInput, Task } from '../types.js'
 import { CronExpressionParser } from 'cron-parser'
 import type { RecurrenceConfig } from '../types.js'
-import { broadcast } from './events.js'
+import { broadcast, type BroadcastSummary } from './events.js'
 
 function getTabId(req: express.Request): string | undefined {
   return req.headers['x-tab-id'] as string | undefined
@@ -105,8 +105,9 @@ router.post('/', (req, res) => {
       assignee ?? undefined,
       recurrence
     )
+    const summary: BroadcastSummary = { source: 'tab', created: [task], updated: [], deleted: [] }
     res.status(201).json(task)
-    broadcast(getTabId(req))
+    broadcast(getTabId(req), summary)
   } catch (err) {
     res.status(500).json({ error: 'Failed to create task' })
   }
@@ -180,8 +181,9 @@ router.patch('/:id', (req, res) => {
       suppressNextOccurrence: updates.suppressNextOccurrence,
       expectedUpdatedAt: updates.expectedUpdatedAt,
     })
+    const summary: BroadcastSummary = { source: 'tab', created: [], updated: [task], deleted: [] }
     res.json(task)
-    broadcast(getTabId(req))
+    broadcast(getTabId(req), summary)
   } catch (err: unknown) {
     if (err instanceof ConflictError) {
       res.status(409).json({ error: 'Task was modified by someone else. Please reload and try again.', currentTask: err.currentTask })
@@ -212,7 +214,10 @@ router.delete('/:id', (req, res) => {
   }
 
   try {
+    const taskTitle = task.title
     deleteTask(id)
+    const summary: BroadcastSummary = { source: 'tab', created: [], updated: [], deleted: [taskTitle] }
+    broadcast(getTabId(req), summary)
     res.status(204).send()
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete task' })
@@ -241,6 +246,9 @@ router.post('/reorder', (req, res) => {
 
   try {
     const tasks = reorderTasks(taskId, targetColumnId, newIndex)
+    const movedTask = tasks.find(t => t.id === taskId)
+    const summary: BroadcastSummary = { source: 'tab', created: [], updated: movedTask ? [movedTask] : [], deleted: [] }
+    broadcast(getTabId(req), summary)
     res.json({ tasks })
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes('not found')) {

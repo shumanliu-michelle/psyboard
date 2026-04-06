@@ -183,7 +183,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
         alignItems: 'flex-end',
         flexShrink: 0,
       }}>
@@ -301,6 +301,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            marginTop: 'auto',
             flexShrink: 0,
           }}>
             {task.assignee}

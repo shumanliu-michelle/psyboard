@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
-import type { Board } from './types'
+import type { Board, BroadcastSummary } from './types'
 import { BoardView } from './components/BoardView'
 import { HeaderToolbar } from './components/HeaderToolbar'
+import { Toast } from './components/Toast'
 import { FilterProvider } from './context/FilterContext'
 import { api, setTabId } from './api'
 
@@ -12,7 +13,9 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [sseStatus, setSseStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting')
+  const [toastSummary, setToastSummary] = useState<BroadcastSummary | null>(null)
   const tabIdRef = useRef(TAB_ID)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function loadBoard() {
     try {
@@ -29,6 +32,11 @@ export default function App() {
   async function handleHASync() {
     const result = await api.syncHA()
     console.log(`[HA] Sync complete: ${result.created.length} created, ${result.skipped.length} skipped`)
+  }
+
+  function dismissToast() {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToastSummary(null)
   }
 
   useEffect(() => {
@@ -49,6 +57,10 @@ export default function App() {
       if (data.tabId === null || data.tabId === undefined || data.tabId !== tabIdRef.current) {
         console.log(`[SSE] Processing board_updated — triggering refresh`)
         loadBoard()
+        // Show toast with whatever summary the server sent
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        setToastSummary(data.summary ?? null)
+        toastTimerRef.current = setTimeout(() => setToastSummary(null), 5000)
       } else {
         console.log(`[SSE] Ignoring board_updated — same tab`)
       }
@@ -81,6 +93,7 @@ export default function App() {
     <FilterProvider tasks={board.tasks}>
       <BoardView board={board} onRefresh={loadBoard} />
       <HeaderToolbar sseStatus={sseStatus} onHASync={handleHASync} />
+      <Toast summary={toastSummary} visible={toastSummary !== null} onDismiss={dismissToast} />
     </FilterProvider>
   )
 }
