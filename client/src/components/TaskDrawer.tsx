@@ -345,26 +345,47 @@ export function TaskDrawer({
           </div>
 
           {recurrence?.kind === 'interval_days' && (
-            <div className="task-drawer-row">
-              <div className="task-drawer-field" style={{ flex: 1 }}>
-                <label htmlFor="recurrence-interval">Every</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, width: '100%', marginBottom: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Every</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setRecurrence(prev => prev ? {
+                    ...prev, intervalDays: Math.max(1, (prev.intervalDays ?? 1) - 1)
+                  } : prev)}
+                  disabled={isCompleted || (recurrence?.intervalDays ?? 1) <= 1}
+                  style={{ width: 36, height: 36, fontSize: 20, cursor: 'pointer', borderRadius: 8, border: '1px solid var(--border-default)', background: 'white' }}
+                >
+                  −
+                </button>
                 <input
                   id="recurrence-interval"
                   type="number"
                   min="1"
-                  value={recurrence.intervalDays ?? 1}
+                  value={recurrence?.intervalDays ?? 1}
                   onChange={e => setRecurrence(prev => prev ? {
                     ...prev, intervalDays: parseInt(e.target.value) || 1
                   } : prev)}
                   disabled={isCompleted}
+                  style={{ width: 96, height: 36, textAlign: 'center', fontSize: 16, padding: '6px 4px', borderRadius: 6, border: '1px solid var(--border-default)' }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setRecurrence(prev => prev ? {
+                    ...prev, intervalDays: (prev?.intervalDays ?? 1) + 1
+                  } : prev)}
+                  disabled={isCompleted}
+                  style={{ width: 36, height: 36, fontSize: 20, cursor: 'pointer', borderRadius: 8, border: '1px solid var(--border-default)', background: 'white' }}
+                >
+                  +
+                </button>
               </div>
-              <span style={{ alignSelf: 'center'}}>days</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Days</span>
             </div>
           )}
 
           {recurrence?.kind === 'cron' && (
-            <div className="task-drawer-field">
+            <div className="task-drawer-field" style={{ marginBottom: 12 }}>
               <label htmlFor="recurrence-cron">Cron expression</label>
               <input
                 id="recurrence-cron"

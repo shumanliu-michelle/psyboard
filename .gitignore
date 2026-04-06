@@ -421,7 +421,7 @@ FodyWeavers.xsd
 server/config/ha/
 
 # psyboard — generated data
-server/data/board.json
+server/data/
 server/data/*.tmp
 client/dist/
 e2e/test-results/
