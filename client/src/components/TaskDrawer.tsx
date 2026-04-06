@@ -47,6 +47,9 @@ export function TaskDrawer({
   const [dateError, setDateError] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  // 'single' = delete this occurrence, 'all' = delete all future, 'non-recurring' = delete task
+  const [pendingDelete, setPendingDelete] = useState<'single' | 'all' | 'non-recurring' | null>(null)
 
   const isCompleted = mode === 'edit' && task?.columnId === DONE_COLUMN_ID
 
@@ -142,9 +145,6 @@ export function TaskDrawer({
 
   async function handleDeleteSingle() {
     if (!task) return
-    if (!window.confirm(task.recurrence
-      ? 'Delete this occurrence? A new task will be created for the next occurrence.'
-      : 'Delete this task? This action cannot be undone.')) return
     setSaving(true)
     try {
       // Move to Done first (creates next occurrence), then delete this task
@@ -161,7 +161,6 @@ export function TaskDrawer({
 
   async function handleDeleteAll() {
     if (!task) return
-    if (!window.confirm('Delete all future occurrences of this recurring task?')) return
     setSaving(true)
     try {
       // Suppress next occurrence (completes without creating next), then delete
@@ -439,14 +438,14 @@ export function TaskDrawer({
               <>
                 <button
                   className="btn-danger-full btn-delete"
-                  onClick={handleDeleteSingle}
+                  onClick={() => { setPendingDelete('single'); setConfirmDelete(true) }}
                   disabled={saving}
                 >
                   Delete this occurrence
                 </button>
                 <button
                   className="btn-danger-full btn-delete"
-                  onClick={handleDeleteAll}
+                  onClick={() => { setPendingDelete('all'); setConfirmDelete(true) }}
                   disabled={saving}
                 >
                   Delete all future occurrences
@@ -455,12 +454,47 @@ export function TaskDrawer({
             ) : (
               <button
                 className="btn-danger-full btn-delete"
-                onClick={handleDeleteSingle}
+                onClick={() => { setPendingDelete('non-recurring'); setConfirmDelete(true) }}
                 disabled={saving}
               >
                 Delete task
               </button>
             )}
+          </div>
+        )}
+
+        {confirmDelete && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+          }}>
+            <div style={{ background: 'white', borderRadius: 8, padding: 24, maxWidth: 300, boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}>
+              <p style={{ marginBottom: 16 }}>
+                {pendingDelete === 'single' && 'Delete this occurrence? A new task will be created for the next occurrence.'}
+                {pendingDelete === 'all' && 'Delete all future occurrences of this recurring task?'}
+                {pendingDelete === 'non-recurring' && 'Delete this task? This action cannot be undone.'}
+              </p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => { setConfirmDelete(false); setPendingDelete(null) }}
+                  style={{ padding: '6px 12px', cursor: 'pointer', borderRadius: 6, border: '1px solid var(--border-default)', background: 'white' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setConfirmDelete(false)
+                    if (pendingDelete === 'single') handleDeleteSingle()
+                    else if (pendingDelete === 'all') handleDeleteAll()
+                    else handleDeleteSingle() // non-recurring
+                    setPendingDelete(null)
+                  }}
+                  style={{ padding: '6px 12px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
