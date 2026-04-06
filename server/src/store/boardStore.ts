@@ -332,23 +332,20 @@ export function updateTask(id: string, updates: {
       }
 
       // Compute next dates
-      const now = new Date().toISOString()
-      // For completion_based: reference is always the completion timestamp
-      // For fixed: reference is the scheduled date; if doDate is null but dueDate
-      //   is set, use dueDate as the reference for the doDate computation (and vice versa)
-      const doDateRef = task.doDate ?? task.dueDate ?? (task.completedAt ?? now)
-      const dueDateRef = task.dueDate ?? task.doDate ?? (task.completedAt ?? now)
+      // completion_based: base is the local date of completion (getTodayString)
+      // fixed: base is doDate/dueDate (passed as currentDate in computeNextDate)
+      const completionDate = getTodayString()
       const nextDoDate = computeNextDate(
         task.doDate ?? null,
         task.recurrence.kind,
         task.recurrence,
-        doDateRef
+        completionDate
       )
       const nextDueDate = computeNextDate(
         task.dueDate ?? null,
         task.recurrence.kind,
         task.recurrence,
-        dueDateRef
+        completionDate
       )
 
       // Build next occurrence task

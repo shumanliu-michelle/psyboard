@@ -5,7 +5,7 @@ export function computeNextDate(
   currentDate: string | null,
   kind: RecurrenceKind,
   config: RecurrenceConfig,
-  _baseTimestamp: string, // used for completion_based mode; currentDate used for fixed mode
+  _baseTimestamp: string, // completion date for completion_based; unused for fixed
 ): string | null {
   if (!currentDate) return null
 
