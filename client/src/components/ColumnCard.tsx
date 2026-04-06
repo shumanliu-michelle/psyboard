@@ -75,6 +75,8 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
   // Older done tasks not yet visible
   const olderDoneTasksCount = isDoneColumn ? Math.max(0, allDoneTasks.length - visibleDoneTasks.length) : 0
 
+  const renderedTasks = isDoneColumn ? visibleDoneTasks : tasks
+
   const systemColors = column.kind === 'system'
     ? getColumnColor(column.systemKey)
     : getColumnColor(undefined, column.accent)
@@ -229,8 +231,8 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
     )}
 
       <div ref={setDroppableRef} className="column-tasks">
-        <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          {tasks.map(task => (
+        <SortableContext items={renderedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+          {renderedTasks.map(task => (
             <TaskCard
               key={task.id}
               task={task}
