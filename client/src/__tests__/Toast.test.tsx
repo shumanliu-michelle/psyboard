@@ -61,4 +61,31 @@ describe('Toast', () => {
     expect(screen.getByText('Morning standup')).toBeInTheDocument()
     expect(screen.getByText('~1')).toBeInTheDocument()
   })
+
+  it('renders deleted task titles with strikethrough red marker', () => {
+    const summary = { source: 'tab' as const, created: [], updated: [], deleted: ['Old task one', 'Old task two'] }
+    render(<Toast visible={true} summary={summary} onDismiss={vi.fn()} />)
+    expect(screen.getByText('Board updated')).toBeInTheDocument()
+    expect(screen.getByText('Old task one')).toBeInTheDocument()
+    expect(screen.getByText('Old task two')).toBeInTheDocument()
+    expect(screen.getAllByText('−').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('renders celebration message for tasks moved to Done', () => {
+    const doneTask = { id: '1', title: 'Morning standup', columnId: 'col-done', order: 0, createdAt: '', updatedAt: '' }
+    const summary = { source: 'tab' as const, created: [], updated: [doneTask], deleted: [] }
+    render(<Toast visible={true} summary={summary} onDismiss={vi.fn()} />)
+    expect(screen.getByText('🎉')).toBeInTheDocument()
+    expect(screen.getByText('Morning standup is done')).toBeInTheDocument()
+  })
+
+  it('shows both done celebration and regular updated tasks', () => {
+    const doneTask = { id: '1', title: 'Completed task', columnId: 'col-done', order: 0, createdAt: '', updatedAt: '' }
+    const updatedTask = { id: '2', title: 'Edited task', columnId: 'today', order: 1, createdAt: '', updatedAt: '' }
+    const summary = { source: 'tab' as const, created: [], updated: [doneTask, updatedTask], deleted: [] }
+    render(<Toast visible={true} summary={summary} onDismiss={vi.fn()} />)
+    expect(screen.getByText('Completed task is done')).toBeInTheDocument()
+    expect(screen.getByText('Edited task')).toBeInTheDocument()
+    expect(screen.getByText('~2')).toBeInTheDocument()
+  })
 })

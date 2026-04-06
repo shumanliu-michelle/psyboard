@@ -34,6 +34,16 @@ function getSkippedCount(summary: BroadcastSummary): number {
   return summary.skipped.length
 }
 
+function getDoneTasks(summary: BroadcastSummary): Task[] {
+  if (summary === null || summary.source !== 'tab') return []
+  return summary.updated.filter(t => t.columnId === 'col-done')
+}
+
+function getOtherUpdatedTasks(summary: BroadcastSummary): Task[] {
+  if (summary === null || summary.source !== 'tab') return []
+  return summary.updated.filter(t => t.columnId !== 'col-done')
+}
+
 export function Toast({ summary, visible, onDismiss }: ToastProps) {
   const [animKey, setAnimKey] = useState(0)
 
@@ -54,6 +64,9 @@ export function Toast({ summary, visible, onDismiss }: ToastProps) {
   const createdCount = getCreatedCount(summary)
   const updatedCount = getUpdatedCount(summary)
   const skippedCount = getSkippedCount(summary)
+  const doneTasks = getDoneTasks(summary)
+  const otherUpdatedTasks = getOtherUpdatedTasks(summary)
+  const deletedTasks = summary !== null && summary.source === 'tab' ? summary.deleted : []
 
   return (
     <div className="toast" role="status" aria-live="polite" key={animKey}>
@@ -83,12 +96,32 @@ export function Toast({ summary, visible, onDismiss }: ToastProps) {
           ))}
         </div>
       )}
-      {summary !== null && summary.source === 'tab' && summary.updated.length > 0 && (
+      {doneTasks.length > 0 && (
         <div className="toast-task-list">
-          {summary.updated.map((item, i) => (
+          {doneTasks.map((item, i) => (
+            <div key={i} className="toast-task-item toast-task-done">
+              <span>🎉</span>
+              <span className="toast-task-title-done">{item.title} is done</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {otherUpdatedTasks.length > 0 && (
+        <div className="toast-task-list">
+          {otherUpdatedTasks.map((item, i) => (
             <div key={i} className="toast-task-item">
               <span className="toast-task-marker toast-task-marker-updated">~</span>
               <span>{item.title}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {deletedTasks.length > 0 && (
+        <div className="toast-task-list">
+          {deletedTasks.map((title, i) => (
+            <div key={i} className="toast-task-item toast-task-deleted">
+              <span className="toast-task-marker toast-task-marker-deleted">−</span>
+              <span>{title}</span>
             </div>
           ))}
         </div>

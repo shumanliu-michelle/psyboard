@@ -1011,6 +1011,24 @@ button.filter-chip[data-assignee="none"].selected {
   color: #3b82f6;
 }
 
+.toast-task-marker-deleted {
+  color: #ef4444;
+}
+
+.toast-task-deleted span:last-child {
+  text-decoration: line-through;
+  color: #ef4444;
+}
+
+.toast-task-done {
+  color: #fbbf24;
+}
+
+.toast-task-title-done {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
 .toast-close {
   position: absolute;
   top: 8px;
