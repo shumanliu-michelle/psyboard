@@ -1,25 +1,24 @@
+import express from 'express'
 import { Router } from 'express'
 
 const router = Router()
 
-// Set of connected SSE clients
-const clients = new Set<Response>()
+// Map of connected SSE clients: Express Response → { tabId }
+const clients = new Map<express.Response, { tabId: string }>()
+let clientIdCounter = 0
 
-export function broadcast(): void {
-  const message = 'data: {"type":"board_updated"}\n\n'
-  const encoder = new TextEncoder()
-  const encoded = encoder.encode(message)
+export function broadcast(sourceTabId?: string): void {
+  const payload = JSON.stringify({ type: 'board_updated', tabId: sourceTabId ?? null })
+  const message = `data: ${payload}\n\n`
+  console.log(`[SSE] Broadcasting to ${clients.size} client(s)${sourceTabId ? ` (source: ${sourceTabId})` : ''}`)
 
-  // Collect disconnected clients first to avoid mutating Set during iteration
-  const deadClients: Response[] = []
+  // Collect disconnected clients first to avoid mutating Map during iteration
+  const deadClients: express.Response[] = []
 
-  for (const client of clients) {
+  for (const [client] of clients) {
     try {
-      client.write(encoded)
+      client.write(message)
     } catch {
-      // Client disconnected — it may have closed the connection mid-write.
-      // We log errors silently since disconnected clients are expected and
-      // will be cleaned up below rather than during iteration.
       deadClients.push(client)
     }
   }
@@ -37,20 +36,23 @@ router.get('/', (req, res) => {
   res.setHeader('Connection', 'keep-alive')
   res.setHeader('X-Accel-Buffering', 'no')
 
-  // Send initial comment to establish connection
-  res.write(': connected\n\n')
+  // Accept tabId from query param so client can filter out its own events
+  const tabId = (req.query.tabId as string) || `unknown-${++clientIdCounter}`
 
-  // Register client
-  clients.add(res)
+  // Send initial comment to establish connection
+  res.write(`: connected (tabId: ${tabId})\n\n`)
+  console.log(`[SSE] Client ${tabId} connected (${clients.size + 1} total)`)
+
+  // Register client with its tabId
+  clients.set(res, { tabId })
 
   // Keep connection alive with periodic heartbeat
   const heartbeat = setInterval(() => {
-    const deadClients: Response[] = []
-    for (const client of clients) {
+    const deadClients: express.Response[] = []
+    for (const [client] of clients) {
       try {
         client.write(': heartbeat\n\n')
       } catch {
-        // Client disconnected — collect for cleanup
         deadClients.push(client)
       }
     }
@@ -61,8 +63,10 @@ router.get('/', (req, res) => {
 
   // Clean up on close
   req.on('close', () => {
+    const entry = clients.get(res)
     clearInterval(heartbeat)
     clients.delete(res)
+    console.log(`[SSE] Client ${entry?.tabId ?? 'unknown'} disconnected (${clients.size} total)`)
   })
 })
 

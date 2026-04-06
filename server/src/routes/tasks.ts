@@ -1,14 +1,13 @@
-import { Router, type Request } from 'express'
+import express from 'express'
+import { Router } from 'express'
 import { createTask, updateTask, deleteTask, readBoard, reorderTasks } from '../store/boardStore.js'
 import type { CreateTaskInput, UpdateTaskInput, Task } from '../types.js'
 import { CronExpressionParser } from 'cron-parser'
 import type { RecurrenceConfig } from '../types.js'
 import { broadcast } from './events.js'
 
-function shouldBroadcast(req: Request): boolean {
-  const p = req.query.broadcast
-  if (p === 'false') return false
-  return true // default: broadcast
+function getTabId(req: express.Request): string | undefined {
+  return req.headers['x-tab-id'] as string | undefined
 }
 
 function validateRecurrenceInput(
@@ -107,9 +106,7 @@ router.post('/', (req, res) => {
       recurrence
     )
     res.status(201).json(task)
-    if (shouldBroadcast(req)) {
-      broadcast()
-    }
+    broadcast(getTabId(req))
   } catch (err) {
     res.status(500).json({ error: 'Failed to create task' })
   }
@@ -183,9 +180,7 @@ router.patch('/:id', (req, res) => {
       suppressNextOccurrence: updates.suppressNextOccurrence,
     })
     res.json(task)
-    if (shouldBroadcast(req)) {
-      broadcast()
-    }
+    broadcast(getTabId(req))
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes('not found')) {
       res.status(404).json({ error: 'Task not found' })

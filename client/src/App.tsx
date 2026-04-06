@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { Board } from './types'
 import { BoardView } from './components/BoardView'
-import { api } from './api'
+import { api, setTabId } from './api'
+
+// Generate a unique tab ID for this browser tab
+const TAB_ID = Math.random().toString(36).slice(2, 10)
 
 export default function App() {
   const [board, setBoard] = useState<Board | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const tabIdRef = useRef(TAB_ID)
 
   async function loadBoard() {
     try {
@@ -21,13 +25,18 @@ export default function App() {
   }
 
   useEffect(() => {
+    setTabId(TAB_ID)
     loadBoard()
   }, [])
 
   useEffect(() => {
-    const es = new EventSource('/api/events')
-    es.onmessage = () => {
-      loadBoard()
+    const es = new EventSource(`/api/events?tabId=${tabIdRef.current}`)
+    es.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      // Ignore events that originated from this tab
+      if (data.tabId && data.tabId !== tabIdRef.current) {
+        loadBoard()
+      }
     }
     es.onerror = () => {
       // EventSource auto-reconnects by default
