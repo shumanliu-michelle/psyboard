@@ -389,6 +389,9 @@ body {
 
 .task-drawer-btn-group button.selected {
   font-weight: 500;
+  background: #eef2ff;
+  border-color: var(--accent-backlog);
+  color: var(--accent-backlog);
 }
 
 .task-drawer-btn-group button.selected.priority-high,
