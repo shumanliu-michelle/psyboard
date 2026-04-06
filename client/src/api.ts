@@ -2,9 +2,19 @@ import type { Board, Column, CreateColumnInput, CreateTaskInput, UpdateTaskInput
 
 const BASE = '/api'
 
+// Tab ID for SSE self-filtering — set by App on mount
+let tabId: string | null = null
+export function setTabId(id: string): void {
+  tabId = id
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (tabId) {
+    headers['X-Tab-Id'] = tabId
+  }
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...options,
   })
   if (!res.ok) {
