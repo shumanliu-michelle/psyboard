@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import '@testing-library/jest-dom'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { TaskDrawer } from '../components/TaskDrawer'
 import { api } from '../api'
-import type { Task } from '../types'
+import type { Task, RecurrenceConfig } from '../types'
 
 // Mock the API module
 vi.mock('../api', () => ({
@@ -13,6 +14,11 @@ vi.mock('../api', () => ({
     deleteTask: vi.fn(),
   },
 }))
+
+const mockTask: Task = {
+  id: 't1', title: 'Existing task', columnId: 'col-backlog', order: 0,
+  createdAt: '2026-01-01', updatedAt: '2026-01-01',
+}
 
 describe('TaskDrawer — create mode', () => {
   beforeEach(() => {
@@ -88,11 +94,6 @@ describe('TaskDrawer — create mode', () => {
 })
 
 describe('TaskDrawer — edit mode', () => {
-  const mockTask: Task = {
-    id: 't1', title: 'Existing task', columnId: 'col-backlog', order: 0,
-    createdAt: '2026-01-01', updatedAt: '2026-01-01',
-  }
-
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -130,5 +131,114 @@ describe('TaskDrawer — edit mode', () => {
     fireEvent.click(screen.getByText('Save'))
     await new Promise(r => setTimeout(r, 0))
     expect(onClose).toHaveBeenCalled()
+  })
+})
+
+describe('TaskDrawer — recurrence fields', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders recurrence select with all options', () => {
+    render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    expect(screen.getByRole('combobox', { name: /repeat/i })).toBeInTheDocument()
+  })
+
+  it('shows interval input when Every X days is selected', async () => {
+    const user = userEvent.setup()
+    render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    const select = screen.getByRole('combobox', { name: /repeat/i })
+    await user.selectOptions(select, 'interval_days')
+    expect(screen.getByLabelText(/every/i)).toBeInTheDocument()
+  })
+
+  it('shows cron input when Advanced is selected', async () => {
+    const user = userEvent.setup()
+    render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    const select = screen.getByRole('combobox', { name: /repeat/i })
+    await user.selectOptions(select, 'cron')
+    expect(screen.getByLabelText(/cron/i)).toBeInTheDocument()
+  })
+
+  it('shows mode toggle when recurrence is set', async () => {
+    const user = userEvent.setup()
+    render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    const select = screen.getByRole('combobox', { name: /repeat/i })
+    await user.selectOptions(select, 'daily')
+    expect(screen.getByText(/fixed schedule/i)).toBeInTheDocument()
+    expect(screen.getByText(/completion-based/i)).toBeInTheDocument()
+  })
+
+  it('shows validation error when recurrence set with no dates', async () => {
+    const user = userEvent.setup()
+    render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    const select = screen.getByRole('combobox', { name: /repeat/i })
+    await user.selectOptions(select, 'daily')
+    expect(screen.getByText(/Recurring tasks must have at least a do date or due date/i)).toBeInTheDocument()
+  })
+
+  it('includes recurrence in createTask call', async () => {
+    const user = userEvent.setup()
+    vi.mocked(api.createTask).mockResolvedValue({ id: 'new-1' } as Task)
+    render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    await user.type(screen.getByLabelText(/title/i), 'Daily Standup')
+    const select = screen.getByRole('combobox', { name: /repeat/i })
+    await user.selectOptions(select, 'daily')
+    await user.type(screen.getByLabelText(/do date/i), '2026-04-05')
+    await user.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => {
+      expect(vi.mocked(api.createTask)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recurrence: { kind: 'daily', mode: 'fixed' },
+        })
+      )
+    })
+  })
+})
+
+describe('TaskDrawer — recurring task delete', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('delete all calls suppressNext then delete', async () => {
+    const task = { ...mockTask, recurrence: { kind: 'daily', mode: 'fixed' as const }, id: 'task-recurring' }
+    vi.mocked(api.updateTask).mockResolvedValue(task)
+    vi.mocked(api.deleteTask).mockResolvedValue(undefined)
+    vi.spyOn(window, 'confirm').mockReturnValue(false) // Cancel = delete all
+
+    render(<TaskDrawer mode="edit" task={task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    expect(vi.mocked(api.updateTask)).toHaveBeenCalledWith(
+      'task-recurring',
+      expect.objectContaining({ columnId: 'col-done', suppressNextOccurrence: true })
+    )
+    await waitFor(() => {
+      expect(vi.mocked(api.deleteTask)).toHaveBeenCalledWith('task-recurring')
+    })
+  })
+
+  it('delete single occurrence deletes without suppressing', async () => {
+    const task = { ...mockTask, recurrence: { kind: 'daily', mode: 'fixed' as const }, id: 'task-recurring' }
+    vi.mocked(api.deleteTask).mockResolvedValue(undefined)
+    vi.spyOn(window, 'confirm').mockReturnValue(true) // OK = delete this only
+
+    render(<TaskDrawer mode="edit" task={task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    expect(vi.mocked(api.updateTask)).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(vi.mocked(api.deleteTask)).toHaveBeenCalledWith('task-recurring')
+    })
+  })
+
+  it('non-recurring task shows standard confirm', async () => {
+    const task = { ...mockTask, id: 'task-normal' }
+    vi.mocked(api.deleteTask).mockResolvedValue(undefined)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    render(<TaskDrawer mode="edit" task={task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    expect(window.confirm).toHaveBeenCalledWith('Delete this task? This action cannot be undone.')
   })
 })

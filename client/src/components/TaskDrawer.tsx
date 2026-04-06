@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Task, TaskPriority } from '../types'
+import type { Task, TaskPriority, RecurrenceConfig, RecurrenceKind } from '../types'
 import { DONE_COLUMN_ID } from '../types'
 import { api } from '../api'
 
@@ -40,6 +40,10 @@ export function TaskDrawer({
   const [assignee, setAssignee] = useState<'SL' | 'KL' | undefined>(() =>
     mode === 'edit' && task ? task.assignee : undefined
   )
+  const [recurrence, setRecurrence] = useState<RecurrenceConfig | undefined>(() =>
+    mode === 'edit' && task ? task.recurrence : undefined
+  )
+  const [recurrenceError, setRecurrenceError] = useState('')
   const [dateError, setDateError] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -64,8 +68,25 @@ export function TaskDrawer({
     }
   }, [doDate, dueDate])
 
+  // Recurrence validation
+  useEffect(() => {
+    if (recurrence) {
+      const hasDoDate = doDate && doDate.length > 0
+      const hasDueDate = dueDate && dueDate.length > 0
+      if (!hasDoDate && !hasDueDate) {
+        setRecurrenceError('Recurring tasks must have at least a do date or due date.')
+      } else if (recurrence.kind === 'interval_days' && (!recurrence.intervalDays || recurrence.intervalDays < 1)) {
+        setRecurrenceError('Interval must be at least 1 day.')
+      } else {
+        setRecurrenceError('')
+      }
+    } else {
+      setRecurrenceError('')
+    }
+  }, [recurrence, doDate, dueDate])
+
   const canSave =
-    title.trim().length > 0 && !dateError && !saving
+    title.trim().length > 0 && !dateError && !recurrenceError && !saving
 
   async function handleSave() {
     if (!canSave) return
@@ -80,6 +101,7 @@ export function TaskDrawer({
           dueDate: dueDate || undefined,
           priority,
           assignee,
+          recurrence,
         })
       } else if (task) {
         await api.updateTask(task.id, {
@@ -89,6 +111,7 @@ export function TaskDrawer({
           dueDate: dueDate || null,
           priority: priority ?? null,
           assignee: assignee ?? null,
+          recurrence: recurrence ?? null,
         })
       }
       onSaved()
@@ -119,20 +142,28 @@ export function TaskDrawer({
 
   async function handleDelete() {
     if (!task) return
-    const confirmed = window.confirm(
-      'Delete this task? This action cannot be undone.'
-    )
-    if (!confirmed) return
-    setSaving(true)
-    try {
+
+    if (task.recurrence) {
+      const deleteAll = !window.confirm(
+        'Delete this recurring task?\n\nOK = Delete this occurrence only\nCancel = Delete all future occurrences'
+      )
+      if (deleteAll) {
+        // Suppress next occurrence (completes without creating next), then delete
+        await api.updateTask(task.id, {
+          columnId: DONE_COLUMN_ID,
+          suppressNextOccurrence: true,
+        })
+      }
       await api.deleteTask(task.id)
-      onSaved()
-      onClose()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete task')
-    } finally {
-      setSaving(false)
+    } else {
+      const confirmed = window.confirm(
+        'Delete this task? This action cannot be undone.'
+      )
+      if (!confirmed) return
+      await api.deleteTask(task.id)
     }
+    onSaved()
+    onClose()
   }
 
   function togglePriority(p: TaskPriority) {
@@ -275,6 +306,91 @@ export function TaskDrawer({
               </button>
             </div>
           </div>
+
+          <div className="task-drawer-field">
+            <label htmlFor="task-recurrence">Repeat</label>
+            <select
+              id="task-recurrence"
+              value={recurrence?.kind ?? ''}
+              onChange={e => {
+                const kind = e.target.value as RecurrenceKind | ''
+                if (!kind) { setRecurrence(undefined); return }
+                setRecurrence({ kind, mode: recurrence?.mode ?? 'fixed' })
+              }}
+              disabled={isCompleted}
+            >
+              <option value="">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="interval_days">Every X days</option>
+              <option value="weekdays">Weekdays only</option>
+              <option value="cron">Advanced (cron)</option>
+            </select>
+          </div>
+
+          {recurrence?.kind === 'interval_days' && (
+            <div className="task-drawer-row">
+              <div className="task-drawer-field" style={{ flex: 1 }}>
+                <label htmlFor="recurrence-interval">Every</label>
+                <input
+                  id="recurrence-interval"
+                  type="number"
+                  min="1"
+                  value={recurrence.intervalDays ?? 1}
+                  onChange={e => setRecurrence(prev => prev ? {
+                    ...prev, intervalDays: parseInt(e.target.value) || 1
+                  } : prev)}
+                  disabled={isCompleted}
+                />
+              </div>
+              <span style={{ alignSelf: 'flex-end', marginBottom: '4px' }}>days</span>
+            </div>
+          )}
+
+          {recurrence?.kind === 'cron' && (
+            <div className="task-drawer-field">
+              <label htmlFor="recurrence-cron">Cron expression</label>
+              <input
+                id="recurrence-cron"
+                type="text"
+                placeholder="0 9 * * *"
+                value={recurrence.cronExpr ?? ''}
+                onChange={e => setRecurrence(prev => prev ? {
+                  ...prev, cronExpr: e.target.value
+                } : prev)}
+                disabled={isCompleted}
+              />
+            </div>
+          )}
+
+          {recurrence && (
+            <div className="task-drawer-field">
+              <label>Mode</label>
+              <div className="task-drawer-btn-group">
+                <button
+                  type="button"
+                  className={recurrence.mode === 'fixed' ? 'selected' : ''}
+                  onClick={() => setRecurrence(prev => prev ? { ...prev, mode: 'fixed' } : prev)}
+                  disabled={isCompleted}
+                >
+                  Fixed schedule
+                </button>
+                <button
+                  type="button"
+                  className={recurrence.mode === 'completion_based' ? 'selected' : ''}
+                  onClick={() => setRecurrence(prev => prev ? { ...prev, mode: 'completion_based' } : prev)}
+                  disabled={isCompleted}
+                >
+                  Completion-based
+                </button>
+              </div>
+            </div>
+          )}
+
+          {recurrenceError && <p className="drawer-error">{recurrenceError}</p>}
+          {dateError && <p className="drawer-error">{dateError}</p>}
+          {error && <p className="drawer-error">{error}</p>}
         </div>
 
         <div className="task-drawer-actions">
