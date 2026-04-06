@@ -11,6 +11,7 @@ export type AlertRule = {
   condition: AlertCondition
   taskTitle: string
   priority: 'high' | 'medium'
+  pollIntervalMinutes?: number  // per-alert override; falls back to config default
 }
 
 export type TriggeredAlert = {
