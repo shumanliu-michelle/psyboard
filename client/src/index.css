@@ -556,3 +556,123 @@ body {
   margin-top: 4px;
   margin-bottom: 8px;
 }
+
+/* === Dark Theme === */
+.dark {
+  --bg-board: #0f172a;
+  --bg-card: #1e293b;
+  --border-default: #334155;
+  --text-primary: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-done: #64748b;
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-drawer: -4px 0 24px rgba(0,0,0,0.4);
+  --assignee-sl-bg: #1e1b4b;
+  --assignee-sl-text: #c4b5fd;
+  --assignee-kl-bg: #1e3a5f;
+  --assignee-kl-text: #93c5fd;
+}
+
+.dark body {
+  background: var(--bg-board);
+}
+
+.dark .board {
+  background: var(--bg-board);
+}
+
+.dark .column {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+}
+
+.dark .task-card {
+  background: var(--bg-card);
+  border-color: var(--border-default);
+}
+
+.dark .column-header h3 {
+  color: var(--text-primary);
+}
+
+.dark .task-count {
+  color: var(--text-muted);
+}
+
+.dark .task-card-title {
+  color: var(--text-primary);
+}
+
+.dark .task-description {
+  color: var(--text-muted);
+}
+
+.dark .task-card.done {
+  background: #1e293b;
+  opacity: 0.7;
+  border-color: #334155;
+}
+
+.dark .task-card.done .task-card-title {
+  color: #64748b;
+}
+
+.dark .task-drawer {
+  background: #1e293b;
+  box-shadow: var(--shadow-drawer);
+}
+
+.dark .task-drawer-header {
+  border-color: #334155;
+}
+
+.dark .task-drawer-header h2 {
+  color: var(--text-primary);
+}
+
+.dark .task-drawer-close {
+  color: #64748b;
+}
+
+.dark .task-drawer-close:hover {
+  background: #334155;
+  color: var(--text-muted);
+}
+
+.dark .drawer-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.dark .add-task-btn {
+  color: #64748b;
+}
+
+.dark .add-form {
+  background: #0f172a;
+}
+
+.dark .add-form input {
+  background: #334155;
+  border-color: #475569;
+  color: var(--text-primary);
+}
+
+.dark .add-column-btn {
+  border-color: #334155;
+  color: #64748b;
+}
+
+.dark .add-column-btn:hover {
+  border-color: var(--accent-backlog);
+  color: var(--accent-backlog);
+  background: var(--assignee-sl-bg);
+}
+
+.dark .column-delete {
+  color: #475569;
+}
+
+.dark .column-delete:hover {
+  background: #334155;
+  color: #94a3b8;
+}
