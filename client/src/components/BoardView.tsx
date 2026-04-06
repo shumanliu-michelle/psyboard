@@ -69,6 +69,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     initialTitle?: string
     columnId?: string
   }>({ open: false, mode: 'create', columnId: undefined })
+  const [pendingColumnMove, setPendingColumnMove] = useState<{ task: Task; targetColumnId: string } | null>(null)
 
   function openDrawerForCreate(columnId: string, initialTitle?: string) {
     setDrawerState({ open: true, mode: 'create', columnId, initialTitle })
@@ -152,16 +153,8 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         setBlockedDragDateError('')
         return
       }
-      // Move to new column
-      const targetColumn = board.columns.find(c => c.id === targetColumnId)
-      if (targetColumn && targetColumn.systemKey !== 'done' && targetColumn.systemKey !== 'backlog') {
-        const targetTasks = board.tasks
-          .filter(t => t.columnId === targetColumnId)
-          .sort((a, b) => a.order - b.order)
-        api.reorderTasks(taskId, targetColumnId, targetTasks.length).then(onRefresh).catch(console.error)
-      } else {
-        api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
-      }
+      // Ask for confirmation before cross-column moves
+      setPendingColumnMove({ task, targetColumnId })
       return
     }
 
@@ -205,6 +198,22 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
       columnId: targetColumnId,
     }).catch(console.error)
     setBlockedDrag(null)
+    onRefresh()
+  }
+
+  async function confirmPendingMove() {
+    if (!pendingColumnMove) return
+    const { task, targetColumnId } = pendingColumnMove
+    const targetColumn = board.columns.find(c => c.id === targetColumnId)
+    if (targetColumn && targetColumn.systemKey !== 'done' && targetColumn.systemKey !== 'backlog') {
+      const targetTasks = board.tasks
+        .filter(t => t.columnId === targetColumnId)
+        .sort((a, b) => a.order - b.order)
+      await api.reorderTasks(task.id, targetColumnId, targetTasks.length).catch(console.error)
+    } else {
+      await api.updateTask(task.id, { columnId: targetColumnId }).catch(console.error)
+    }
+    setPendingColumnMove(null)
     onRefresh()
   }
 
@@ -338,6 +347,36 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         </div>
       </div>
     )}
+
+    {pendingColumnMove && (() => {
+      const targetColumn = board.columns.find(c => c.id === pendingColumnMove.targetColumnId)
+      return (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+        }}
+        onClick={() => setPendingColumnMove(null)}>
+          <div style={{ background: 'white', borderRadius: 8, padding: 24, maxWidth: 320, boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
+          onClick={e => e.stopPropagation()}>
+            <p style={{ marginBottom: 20 }}>Move "{pendingColumnMove.task.title}" to {targetColumn?.title ?? 'this column'}?</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setPendingColumnMove(null)}
+                style={{ padding: '6px 12px', cursor: 'pointer', borderRadius: 6, border: '1px solid var(--border-default)', background: 'white' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmPendingMove}
+                style={{ padding: '6px 12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Move
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    })()}
     </>
   )
 }
