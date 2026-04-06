@@ -1,39 +1,34 @@
 import { CronExpressionParser } from 'cron-parser'
-import type { RecurrenceConfig, RecurrenceKind, RecurrenceMode } from '../types.js'
+import type { RecurrenceConfig, RecurrenceKind } from '../types.js'
 
 export function computeNextDate(
   currentDate: string | null,
   kind: RecurrenceKind,
   config: RecurrenceConfig,
-  baseTimestamp: string,
+  _baseTimestamp: string, // used for completion_based mode; currentDate used for fixed mode
 ): string | null {
-  const mode: RecurrenceMode = config.mode ?? 'fixed'
+  if (!currentDate) return null
 
-  // For completion_based, advance from the completion timestamp.
-  // For fixed, advance from the scheduled date (doDate/dueDate).
-  const referenceDate = mode === 'completion_based'
-    ? baseTimestamp.slice(0, 10)
+  // For completion_based, next occurrence is relative to completion date.
+  // For fixed, next occurrence is relative to the doDate (currentDate).
+  const isCompletionBased = config.mode === 'completion_based'
+  const baseDate = isCompletionBased
+    ? _baseTimestamp.slice(0, 10)
     : currentDate
-
-  if (!referenceDate) return null
-
-  function advance(base: Date, days: number): Date {
-    const d = new Date(base)
-    d.setUTCDate(d.getUTCDate() + days)
-    return d
-  }
 
   switch (kind) {
     case 'daily': {
-      const base = new Date(referenceDate + 'T00:00:00Z')
-      return advance(base, 1).toISOString().slice(0, 10)
+      const base = new Date(baseDate + 'T00:00:00Z')
+      base.setUTCDate(base.getUTCDate() + 1)
+      return base.toISOString().slice(0, 10)
     }
     case 'weekly': {
-      const base = new Date(referenceDate + 'T00:00:00Z')
-      return advance(base, 7).toISOString().slice(0, 10)
+      const base = new Date(baseDate + 'T00:00:00Z')
+      base.setUTCDate(base.getUTCDate() + 7)
+      return base.toISOString().slice(0, 10)
     }
     case 'monthly': {
-      const base = new Date(referenceDate + 'T00:00:00Z')
+      const base = new Date(baseDate + 'T00:00:00Z')
       const targetDay = config.dayOfMonth ?? base.getUTCDate()
       const currentMonth = base.getUTCMonth()
       const targetMonth = currentMonth + 1
@@ -46,20 +41,20 @@ export function computeNextDate(
     case 'interval_days': {
       const intervalDays = config.intervalDays ?? 1
       if (intervalDays < 1) return null
-      const base = new Date(referenceDate + 'T00:00:00Z')
-      return advance(base, intervalDays).toISOString().slice(0, 10)
+      const base = new Date(baseDate + 'T00:00:00Z')
+      base.setUTCDate(base.getUTCDate() + intervalDays)
+      return base.toISOString().slice(0, 10)
     }
     case 'weekdays': {
-      const base = new Date(referenceDate + 'T00:00:00Z')
+      const base = new Date(baseDate + 'T00:00:00Z')
       do { base.setUTCDate(base.getUTCDate() + 1) }
       while (base.getUTCDay() === 0 || base.getUTCDay() === 6)
       return base.toISOString().slice(0, 10)
     }
     case 'cron': {
       if (!config.cronExpr) return null
-      // For cron, the reference is always the baseTimestamp (completion time for
-      // completion_based, or scheduled date for fixed)
-      const interval = CronExpressionParser.parse(config.cronExpr, { currentDate: new Date(baseTimestamp) })
+      const interval = CronExpressionParser.parse(config.cronExpr, { currentDate: new Date(_baseTimestamp) })
+      // Skip same-day occurrence and get next day's match
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const next = interval.next() as any
       const next2 = interval.next() as any
