@@ -267,7 +267,7 @@ export function TaskDrawer({
               </button>
               <button
                 type="button"
-                className={assignee === undefined ? 'selected' : ''}
+                className={`assignee-none${assignee === undefined ? ' selected' : ''}`}
                 onClick={() => setAssignee(undefined)}
                 disabled={isCompleted}
               >
