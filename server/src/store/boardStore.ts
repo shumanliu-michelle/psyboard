@@ -315,7 +315,7 @@ export function updateTask(id: string, updates: {
   if (updates.dueDate !== undefined) task.dueDate = updates.dueDate
   if (updates.priority !== undefined) task.priority = updates.priority === null ? undefined : updates.priority
   if (updates.completedAt !== undefined) task.completedAt = updates.completedAt
-  if (updates.recurrence !== undefined) task.recurrence = updates.recurrence === null ? undefined : updates.recurrence
+  if (updates.recurrence !== undefined) task.recurrence = updates.recurrence === null ? undefined : updates.recurrence as import('../types.js').RecurrenceConfig
   task.updatedAt = new Date().toISOString()
 
   // Recurring task completion: generate next occurrence

@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { createTask, updateTask, deleteTask, readBoard, reorderTasks } from '../store/boardStore.js'
 import type { CreateTaskInput, UpdateTaskInput, Task } from '../types.js'
-import cronParser from 'cron-parser'
+import { CronExpressionParser } from 'cron-parser'
 import type { RecurrenceConfig } from '../types.js'
 
 function validateRecurrenceInput(
@@ -30,7 +30,7 @@ function validateRecurrenceInput(
   if (recurrence.kind === 'cron') {
     if (!recurrence.cronExpr) return 'Invalid recurrence rule.'
     try {
-      cronParser.parseExpression(recurrence.cronExpr, { currentDate: new Date() })
+      CronExpressionParser.parse(recurrence.cronExpr, { currentDate: new Date() })
     } catch {
       return 'Invalid recurrence rule.'
     }
@@ -96,7 +96,7 @@ router.post('/', (req, res) => {
       doDate?.trim() || null,
       dueDate?.trim() || null,
       priority,
-      assignee,
+      assignee ?? undefined,
       recurrence
     )
     res.status(201).json(task)
@@ -159,7 +159,19 @@ router.patch('/:id', (req, res) => {
   }
 
   try {
-    const task = updateTask(id, updates)
+    const task = updateTask(id, {
+      title: updates.title,
+      description: updates.description,
+      columnId: updates.columnId,
+      order: updates.order,
+      assignee: updates.assignee ?? undefined,
+      doDate: updates.doDate,
+      dueDate: updates.dueDate,
+      priority: updates.priority ?? undefined,
+      completedAt: updates.completedAt,
+      recurrence: updates.recurrence as import('../types.js').RecurrenceConfig | null | undefined,
+      suppressNextOccurrence: updates.suppressNextOccurrence,
+    })
     res.json(task)
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes('not found')) {

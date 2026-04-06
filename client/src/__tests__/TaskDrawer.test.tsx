@@ -4,7 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TaskDrawer } from '../components/TaskDrawer'
 import { api } from '../api'
-import type { Task, RecurrenceConfig } from '../types'
+import type { Task } from '../types'
 
 // Mock the API module
 vi.mock('../api', () => ({
@@ -200,12 +200,12 @@ describe('TaskDrawer — recurring task delete', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   it('delete all calls suppressNext then delete', async () => {
-    const task = { ...mockTask, recurrence: { kind: 'daily', mode: 'fixed' as const }, id: 'task-recurring' }
-    vi.mocked(api.updateTask).mockResolvedValue(task)
+    const task = { ...mockTask, recurrence: { kind: 'daily' as const, mode: 'fixed' as const }, id: 'task-recurring' }
+    vi.mocked(api.updateTask).mockResolvedValue(task as Task)
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
     vi.spyOn(window, 'confirm').mockReturnValue(false) // Cancel = delete all
 
-    render(<TaskDrawer mode="edit" task={task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    render(<TaskDrawer mode="edit" task={task as Task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
 
     expect(vi.mocked(api.updateTask)).toHaveBeenCalledWith(
@@ -218,11 +218,11 @@ describe('TaskDrawer — recurring task delete', () => {
   })
 
   it('delete single occurrence deletes without suppressing', async () => {
-    const task = { ...mockTask, recurrence: { kind: 'daily', mode: 'fixed' as const }, id: 'task-recurring' }
+    const task = { ...mockTask, recurrence: { kind: 'daily' as const, mode: 'fixed' as const }, id: 'task-recurring' }
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
     vi.spyOn(window, 'confirm').mockReturnValue(true) // OK = delete this only
 
-    render(<TaskDrawer mode="edit" task={task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
+    render(<TaskDrawer mode="edit" task={task as Task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
 
     expect(vi.mocked(api.updateTask)).not.toHaveBeenCalled()

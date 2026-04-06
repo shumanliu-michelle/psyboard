@@ -47,10 +47,11 @@ export function computeNextDate(
     case 'cron': {
       if (!config.cronExpr) return null
       const interval = CronExpressionParser.parse(config.cronExpr, { currentDate: new Date(_baseTimestamp) })
-      // First next() returns occurrence at or after currentDate.
-      // Second next() returns the following occurrence (next cron match).
-      interval.next()
-      return interval.next().toISOString().slice(0, 10)
+      // Skip same-day occurrence and get next day's match
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const next = interval.next() as any
+      const next2 = interval.next() as any
+      return next2 ? next2.toISOString().slice(0, 10) : (next ? next.toISOString().slice(0, 10) : null)
     }
   }
 }
