@@ -1,13 +1,14 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useFilterContext } from '../context/FilterContext'
 
 type SseStatus = 'connected' | 'connecting' | 'disconnected'
 
 interface HeaderToolbarProps {
   sseStatus: SseStatus
+  onHASync?: () => Promise<void>
 }
 
-export function HeaderToolbar({ sseStatus }: HeaderToolbarProps) {
+export function HeaderToolbar({ sseStatus, onHASync }: HeaderToolbarProps) {
   const {
     expanded, setExpanded,
     searchQuery, setSearchQuery,
@@ -15,6 +16,20 @@ export function HeaderToolbar({ sseStatus }: HeaderToolbarProps) {
     matchingCount,
   } = useFilterContext()
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const [haSyncStatus, setHaSyncStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+
+  async function handleHASync() {
+    if (!onHASync || haSyncStatus === 'loading') return
+    setHaSyncStatus('loading')
+    try {
+      await onHASync()
+      setHaSyncStatus('success')
+      setTimeout(() => setHaSyncStatus('idle'), 3000)
+    } catch {
+      setHaSyncStatus('error')
+      setTimeout(() => setHaSyncStatus('idle'), 4000)
+    }
+  }
 
   const isSearchOpen = expanded === 'search'
   const isFilterOpen = expanded === 'filter'
@@ -91,6 +106,17 @@ export function HeaderToolbar({ sseStatus }: HeaderToolbarProps) {
           >
             🔲
           </button>
+          {onHASync && (
+            <button
+              className={`toolbar-btn ha-sync-btn ${haSyncStatus}`}
+              onClick={handleHASync}
+              aria-label="Sync with Home Assistant"
+              title={haSyncStatus === 'loading' ? 'Syncing...' : haSyncStatus === 'success' ? 'HA synced!' : haSyncStatus === 'error' ? 'HA sync failed' : 'Sync Home Assistant'}
+              disabled={haSyncStatus === 'loading'}
+            >
+              {haSyncStatus === 'loading' ? '⏳' : haSyncStatus === 'success' ? '✅' : haSyncStatus === 'error' ? '⚠️' : '🏠'}
+            </button>
+          )}
           <SseDot status={sseStatus} />
         </div>
       )}

@@ -61,6 +61,24 @@ describe('POST /api/home-assistant/check', () => {
     expect(res.body.skipped).toContain('Refill S8 water tank')
   })
 
+  it('re-creates a task if the existing one was moved to Done', async () => {
+    // First check creates the task
+    await request(app).post('/api/home-assistant/check')
+
+    // Move the task to Done
+    const board = await request(app).get('/api/board')
+    const task = board.body.tasks.find((t: { title: string }) => t.title === 'Refill S8 water tank')
+    await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID })
+
+    // HA fires again — should re-create, not skip
+    const res = await request(app).post('/api/home-assistant/check')
+    expect(res.status).toBe(200)
+    expect(res.body.created).toContain('Refill S8 water tank')
+    expect(res.body.skipped).not.toContain('Refill S8 water tank')
+  })
+
   describe('error paths', () => {
     it('returns 500 when HA env is not configured', async () => {
       mockState.loadHAEnvError = new Error('HOME_ASSISTANT_URL not set')

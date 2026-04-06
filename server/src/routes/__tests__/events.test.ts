@@ -80,3 +80,84 @@ describe('GET /api/events — SSE', () => {
     }, 50)
   })
 })
+
+describe('broadcast() — tabId behavior', () => {
+  let tmpDir: string
+
+  beforeEach(() => {
+    tmpDir = setupTestBoard()
+    const board = createTestBoard([])
+    writeBoard(board)
+  })
+
+  afterEach(() => {
+    teardownTestBoard()
+  })
+
+  it('broadcasts with tabId: null when sourceTabId is undefined (server-initiated)', (done) => {
+    const sseReq = request(app)
+      .get('/api/events')
+      .buffer(true)
+
+    setTimeout(() => {
+      // Task creation without X-Tab-Id header → getTabId returns undefined → broadcast(undefined)
+      // → SSE message has tabId: null
+      request(app)
+        .post('/api/tasks')
+        .set('X-Tab-Id', '') // explicitly empty — same as not sending the header
+        .send({ title: 'Task A', columnId: BACKLOG_COLUMN_ID })
+        .end(() => {
+          sseReq.end((_err, res) => {
+            expect(res.text).toMatch(/"tabId":null/)
+            done()
+          })
+        })
+    }, 50)
+  })
+
+  it('broadcasts with tabId: null and all clients receive it (not filtered as self)', (done) => {
+    // Two SSE clients: one with tabId, one without
+    const client1 = request(app).get('/api/events?tabId=client-1').buffer(true)
+    const client2 = request(app).get('/api/events').buffer(true)
+
+    setTimeout(() => {
+      // HA sync (or any server-initiated broadcast) calls broadcast(undefined) → tabId: null
+      // Both clients receive it regardless of their own tabId
+      // We simulate via a task create without X-Tab-Id header
+      request(app)
+        .post('/api/tasks')
+        .send({ title: 'Server task', columnId: BACKLOG_COLUMN_ID })
+        .end(() => {
+          client1.end((_err, res1) => {
+            expect(res1.text).toContain('board_updated')
+            expect(res1.text).toMatch(/"tabId":null/)
+            client2.end((_err2, res2) => {
+              expect(res2.text).toContain('board_updated')
+              expect(res2.text).toMatch(/"tabId":null/)
+              done()
+            })
+          })
+        })
+    }, 50)
+  })
+
+  it('broadcasts with the tabId string when X-Tab-Id header is present', (done) => {
+    const sseReq = request(app)
+      .get('/api/events')
+      .buffer(true)
+
+    setTimeout(() => {
+      // Task creation with X-Tab-Id header → broadcast(tabId) → tabId: 'my-tab'
+      request(app)
+        .post('/api/tasks')
+        .set('X-Tab-Id', 'my-tab')
+        .send({ title: 'Task B', columnId: BACKLOG_COLUMN_ID })
+        .end(() => {
+          sseReq.end((_err, res) => {
+            expect(res.text).toMatch(/"tabId":"my-tab"/)
+            done()
+          })
+        })
+    }, 50)
+  })
+})

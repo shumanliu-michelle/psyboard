@@ -3,6 +3,7 @@ import { loadHAEnv, loadHAConfig } from './config.js'
 import { getAllStates } from './haClient.js'
 import { evaluateAlerts } from './alertEngine.js'
 import { createTasksForAlerts } from './taskCreator.js'
+import { broadcast } from '../routes/events.js'
 
 const router = Router()
 
@@ -34,6 +35,9 @@ router.post('/check', async (_req, res) => {
 
   const triggered = evaluateAlerts(config.alerts, entityMap)
   const results = createTasksForAlerts(triggered)
+
+  // Broadcast board update to all connected SSE clients
+  broadcast(undefined)
 
   const created = results.filter(r => r.action === 'created').map(r => r.alert.taskTitle)
   const skipped = results.filter(r => r.action === 'skipped').map(r => r.alert.taskTitle)

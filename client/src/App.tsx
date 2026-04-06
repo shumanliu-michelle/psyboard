@@ -26,6 +26,11 @@ export default function App() {
     }
   }
 
+  async function handleHASync() {
+    const result = await api.syncHA()
+    console.log(`[HA] Sync complete: ${result.created.length} created, ${result.skipped.length} skipped`)
+  }
+
   useEffect(() => {
     setTabId(TAB_ID)
     loadBoard()
@@ -39,7 +44,9 @@ export default function App() {
     es.onmessage = (event) => {
       const data = JSON.parse(event.data)
       console.log(`[SSE] Received board_updated (source: ${data.tabId ?? 'null'}, mine: ${tabIdRef.current})`)
-      if (data.tabId && data.tabId !== tabIdRef.current) {
+      // Reload when the event came from a different tab, or from the server itself (HA/cron/etc. where tabId is null).
+      // Skip only when tabId is our own (self-triggered event that we don't need to process).
+      if (data.tabId === null || data.tabId === undefined || data.tabId !== tabIdRef.current) {
         console.log(`[SSE] Processing board_updated — triggering refresh`)
         loadBoard()
       } else {
@@ -73,7 +80,7 @@ export default function App() {
   return (
     <FilterProvider tasks={board.tasks}>
       <BoardView board={board} onRefresh={loadBoard} />
-      <HeaderToolbar sseStatus={sseStatus} />
+      <HeaderToolbar sseStatus={sseStatus} onHASync={handleHASync} />
     </FilterProvider>
   )
 }

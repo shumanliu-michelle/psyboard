@@ -66,4 +66,7 @@ export const api = {
 
   reorderColumns: (columnIds: string[]) =>
     request<{ columns: Column[] }>('/columns/reorder', { method: 'POST', body: JSON.stringify({ columnIds }) }),
+
+  syncHA: () =>
+    request<{ created: string[]; skipped: string[] }>('/home-assistant/check', { method: 'POST' }),
 }
