@@ -198,6 +198,14 @@ router.delete('/:id', (req, res) => {
     return
   }
 
+  // Check if task exists
+  const board = readBoard()
+  const task = board.tasks.find(t => t.id === id)
+  if (!task) {
+    res.status(404).json({ error: 'Task not found' })
+    return
+  }
+
   try {
     deleteTask(id)
     res.status(204).send()
