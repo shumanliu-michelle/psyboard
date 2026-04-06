@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import fs from 'fs'
 import path from 'path'
+import request from 'supertest'
+import { app } from '../index.js'
 import { writeBoard } from '../store/boardStore.js'
 import { setupTestBoard, teardownTestBoard } from './testBoard.js'
+import * as backupModule from '../backup.js'
 import { setDataDir, resetDataDir, createBackup, startBackupScheduler, stopBackupScheduler } from '../backup.js'
 
 describe('Backup', () => {
@@ -53,5 +56,43 @@ describe('Backup', () => {
     const files = fs.readdirSync(tmpDir)
     const backupFiles = files.filter(f => f.startsWith('board.') && f.endsWith('.json'))
     expect(backupFiles).toHaveLength(0)
+  })
+})
+
+describe('POST /api/backup', () => {
+  let tmpDir: string
+
+  beforeEach(() => {
+    tmpDir = setupTestBoard()
+    setDataDir(tmpDir)
+    writeBoard({ columns: [], tasks: [] })
+  })
+
+  afterEach(() => {
+    stopBackupScheduler()
+    resetDataDir()
+    teardownTestBoard()
+  })
+
+  it('returns 200 and { backup: "created" } on success', async () => {
+    const res = await request(app).post('/api/backup')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ backup: 'created' })
+  })
+
+  it('creates a backup file', async () => {
+    await request(app).post('/api/backup')
+
+    const files = fs.readdirSync(tmpDir)
+    const backupFiles = files.filter(f => f.startsWith('board.') && f.endsWith('.json') && f !== 'board.json')
+    expect(backupFiles).toHaveLength(1)
+  })
+
+  it('returns 500 when createBackup throws', async () => {
+    vi.spyOn(backupModule, 'createBackup').mockRejectedValue(new Error('disk error'))
+    const res = await request(app)
+      .post('/api/backup')
+      .expect(500)
+    expect(res.body).toEqual({ error: 'Backup failed' })
   })
 })

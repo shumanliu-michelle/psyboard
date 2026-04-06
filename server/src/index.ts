@@ -4,6 +4,7 @@ import columnsRouter from './routes/columns.js'
 import tasksRouter from './routes/tasks.js'
 import homeAssistantRouter from './home-assistant/index.js'
 import eventsRouter from './routes/events.js'
+import backupRouter from './routes/backup.js'
 import { startScheduler } from './home-assistant/scheduler.js'
 import { startBackupScheduler } from './backup.js'
 
@@ -18,6 +19,7 @@ app.use('/api/columns', columnsRouter)
 app.use('/api/tasks', tasksRouter)
 app.use('/api/home-assistant', homeAssistantRouter)
 app.use('/api/events', eventsRouter)
+app.use('/api/backup', backupRouter)
 
 // Start server (only when not running tests)
 if (process.env.NODE_ENV !== 'test') {
