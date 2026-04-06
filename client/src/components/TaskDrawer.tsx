@@ -140,28 +140,21 @@ export function TaskDrawer({
     }
   }
 
-  async function handleDelete() {
+  async function handleDeleteSingle() {
     if (!task) return
+    await api.deleteTask(task.id)
+    onSaved()
+    onClose()
+  }
 
-    if (task.recurrence) {
-      const deleteAll = !window.confirm(
-        'Delete this recurring task?\n\nOK = Delete this occurrence only\nCancel = Delete all future occurrences'
-      )
-      if (deleteAll) {
-        // Suppress next occurrence (completes without creating next), then delete
-        await api.updateTask(task.id, {
-          columnId: DONE_COLUMN_ID,
-          suppressNextOccurrence: true,
-        })
-      }
-      await api.deleteTask(task.id)
-    } else {
-      const confirmed = window.confirm(
-        'Delete this task? This action cannot be undone.'
-      )
-      if (!confirmed) return
-      await api.deleteTask(task.id)
-    }
+  async function handleDeleteAll() {
+    if (!task) return
+    // Suppress next occurrence (completes without creating next), then delete
+    await api.updateTask(task.id, {
+      columnId: DONE_COLUMN_ID,
+      suppressNextOccurrence: true,
+    })
+    await api.deleteTask(task.id)
     onSaved()
     onClose()
   }
@@ -422,13 +415,32 @@ export function TaskDrawer({
                 Mark done
               </button>
             )}
-            <button
-              className="btn-danger-full btn-delete"
-              onClick={handleDelete}
-              disabled={saving}
-            >
-              Delete task
-            </button>
+            {task.recurrence ? (
+              <>
+                <button
+                  className="btn-danger-full btn-delete"
+                  onClick={handleDeleteSingle}
+                  disabled={saving}
+                >
+                  Delete this occurrence
+                </button>
+                <button
+                  className="btn-danger-full btn-delete"
+                  onClick={handleDeleteAll}
+                  disabled={saving}
+                >
+                  Delete all future occurrences
+                </button>
+              </>
+            ) : (
+              <button
+                className="btn-danger-full btn-delete"
+                onClick={handleDeleteSingle}
+                disabled={saving}
+              >
+                Delete task
+              </button>
+            )}
           </div>
         )}
       </div>

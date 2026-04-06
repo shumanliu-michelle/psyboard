@@ -195,10 +195,9 @@ describe('TaskDrawer — recurring task delete', () => {
     const task = { ...mockTask, recurrence: { kind: 'daily' as const, mode: 'fixed' as const }, id: 'task-recurring' }
     vi.mocked(api.updateTask).mockResolvedValue(task as Task)
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
-    vi.spyOn(window, 'confirm').mockReturnValue(false) // Cancel = delete all
 
     render(<TaskDrawer mode="edit" task={task as Task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
-    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: /delete all future/i }))
 
     expect(vi.mocked(api.updateTask)).toHaveBeenCalledWith(
       'task-recurring',
@@ -212,10 +211,9 @@ describe('TaskDrawer — recurring task delete', () => {
   it('delete single occurrence deletes without suppressing', async () => {
     const task = { ...mockTask, recurrence: { kind: 'daily' as const, mode: 'fixed' as const }, id: 'task-recurring' }
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
-    vi.spyOn(window, 'confirm').mockReturnValue(true) // OK = delete this only
 
     render(<TaskDrawer mode="edit" task={task as Task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
-    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: /delete this occurrence/i }))
 
     expect(vi.mocked(api.updateTask)).not.toHaveBeenCalled()
     await waitFor(() => {
@@ -223,14 +221,17 @@ describe('TaskDrawer — recurring task delete', () => {
     })
   })
 
-  it('non-recurring task shows standard confirm', async () => {
+  it('non-recurring task deletes without confirm dialog', async () => {
     const task = { ...mockTask, id: 'task-normal' }
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     render(<TaskDrawer mode="edit" task={task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
-    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: /delete task/i }))
 
-    expect(window.confirm).toHaveBeenCalledWith('Delete this task? This action cannot be undone.')
+    expect(window.confirm).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(vi.mocked(api.deleteTask)).toHaveBeenCalledWith('task-normal')
+    })
   })
 })
