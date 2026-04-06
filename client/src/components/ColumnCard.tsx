@@ -253,6 +253,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
             Showing last {(donePage + 1) * DONE_PAGE_DAYS} days · {olderDoneTasksCount} older {olderDoneTasksCount === 1 ? 'task' : 'tasks'}
           </div>
           <button
+            type="button"
             onClick={() => setDonePage(p => p + 1)}
             style={{
               background: 'none',
