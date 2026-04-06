@@ -82,6 +82,7 @@ Default columns: Todo (order: 0), Today (order: 1), This Week (order: 2), Done (
 - **Structured errors.** API returns `{ error: string }` body on 400/404/500.
 - **Clean over clever.** Learning project — prioritize readability.
 - **Tests inline.** 80%+ coverage target on server code.
+- **CSS: inline vs class.** Prefer CSS classes for layout, typography, colors, states, pseudo-selectors, and media queries. Use inline `style={{}}` only for values computed at render time (e.g., dynamic colors from priority, transform from drag, opacity from dim state). Avoid setting the same CSS property in both a CSS class and inline style on the same element.
 
 ## Testing
 
