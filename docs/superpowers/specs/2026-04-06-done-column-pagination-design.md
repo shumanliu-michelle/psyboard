@@ -24,6 +24,7 @@ Clicking "Show older tasks" reveals the next oldest 7 days of completed tasks in
 - Each page = 7 days of done tasks
 - No limit on total pages
 - Footer shows cumulative count: "Showing tasks from last 14 days · 18 older tasks"
+- Pagination state is independent of search/filter — paginating then searching keeps expanded pagination with non-matching tasks dimmed
 
 ### What Doesn't Change
 
