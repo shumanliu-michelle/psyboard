@@ -5,6 +5,7 @@ import tasksRouter from './routes/tasks.js'
 import homeAssistantRouter from './home-assistant/index.js'
 import eventsRouter from './routes/events.js'
 import { startScheduler } from './home-assistant/scheduler.js'
+import { startBackupScheduler } from './backup.js'
 
 export const app = express()
 const PORT = 3001
@@ -23,5 +24,6 @@ if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`psyboard server running on http://localhost:${PORT}`)
     startScheduler()
+    startBackupScheduler(2 * 60 * 60 * 1000) // 2 hours
   })
 }

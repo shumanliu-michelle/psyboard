@@ -112,50 +112,67 @@ describe('computeNextDate', () => {
   const fixedConfig: RecurrenceConfig = { kind: 'daily', mode: 'fixed' }
 
   it('returns next day for daily recurrence', () => {
-    const result = computeNextDate('2026-04-05', 'daily', fixedConfig, '2026-04-05T10:00:00Z')
+    // today = 2026-04-05 so computed '2026-04-06' is already tomorrow (future)
+    const result = computeNextDate('2026-04-05', 'daily', fixedConfig, '2026-04-05T10:00:00Z', '2026-04-05')
     expect(result).toBe('2026-04-06')
   })
 
   it('returns null when currentDate is null', () => {
-    const result = computeNextDate(null, 'daily', fixedConfig, '2026-04-05T10:00:00Z')
+    const result = computeNextDate(null, 'daily', fixedConfig, '2026-04-05T10:00:00Z', '2026-04-05')
     expect(result).toBeNull()
   })
 
   it('advances 7 days for weekly recurrence', () => {
-    const result = computeNextDate('2026-04-05', 'weekly', fixedConfig, '2026-04-05T10:00:00Z')
+    const result = computeNextDate('2026-04-05', 'weekly', fixedConfig, '2026-04-05T10:00:00Z', '2026-04-05')
     expect(result).toBe('2026-04-12')
   })
 
   it('advances to next month for monthly recurrence', () => {
-    const result = computeNextDate('2026-04-15', 'monthly', fixedConfig, '2026-04-15T10:00:00Z')
+    const result = computeNextDate('2026-04-15', 'monthly', fixedConfig, '2026-04-15T10:00:00Z', '2026-04-15')
     expect(result).toBe('2026-05-15')
   })
 
   it('caps day-of-month to last day if needed', () => {
     const config: RecurrenceConfig = { kind: 'monthly', mode: 'fixed', dayOfMonth: 31 }
-    const result = computeNextDate('2026-01-31', 'monthly', config, '2026-01-31T10:00:00Z')
+    // today = 2026-01-30 so computed '2026-02-28' is still in the future
+    const result = computeNextDate('2026-01-31', 'monthly', config, '2026-01-31T10:00:00Z', '2026-01-30')
     // Feb doesn't have 31 days — should cap to 28
     expect(result).toBe('2026-02-28')
   })
 
   it('advances by intervalDays for interval_days recurrence', () => {
     const config: RecurrenceConfig = { kind: 'interval_days', mode: 'fixed', intervalDays: 5 }
-    const result = computeNextDate('2026-04-05', 'interval_days', config, '2026-04-05T10:00:00Z')
+    // today = 2026-04-04 so computed '2026-04-10' is still in the future
+    const result = computeNextDate('2026-04-05', 'interval_days', config, '2026-04-05T10:00:00Z', '2026-04-04')
     expect(result).toBe('2026-04-10')
   })
 
   it('skips weekends for weekdays recurrence', () => {
-    // 2026-04-03 is a Friday
-    const result = computeNextDate('2026-04-03', 'weekdays', fixedConfig, '2026-04-03T10:00:00Z')
+    // today = 2026-04-02 (Thursday) so '2026-04-06' (Monday) is in the future
+    const result = computeNextDate('2026-04-03', 'weekdays', fixedConfig, '2026-04-03T10:00:00Z', '2026-04-02')
     // Next weekday after Friday is Monday April 6
     expect(result).toBe('2026-04-06')
   })
 
   it('returns next cron occurrence for cron kind', () => {
     const config: RecurrenceConfig = { kind: 'cron', mode: 'fixed', cronExpr: '0 9 * * *' }
-    const result = computeNextDate('2026-04-05', 'cron', config, '2026-04-05T10:00:00Z')
+    // today = 2026-04-05 so cron starts from Apr 5; 9am on Apr 5 is past, first next is Apr 6
+    const result = computeNextDate('2026-04-05', 'cron', config, '2026-04-05T10:00:00Z', '2026-04-05')
     // 10am on Apr 5 is past 9am, so next is 9am on Apr 6
     expect(result).toBe('2026-04-06')
+  })
+
+  it('fixed daily skips past dates to find next future date', () => {
+    // Task was due April 1, not completed until April 6 — next should be April 7, not April 2
+    const result = computeNextDate('2026-04-01', 'daily', fixedConfig, '2026-04-06T10:00:00Z', '2026-04-06')
+    expect(result).toBe('2026-04-07')
+  })
+
+  it('fixed monthly skips past months to find next future month', () => {
+    // Monthly on day 1, completed April 6 — next should be May 1 (not Apr 1, which is past)
+    const config: RecurrenceConfig = { kind: 'monthly', mode: 'fixed', dayOfMonth: 1 }
+    const result = computeNextDate('2026-04-01', 'monthly', config, '2026-04-06T10:00:00Z', '2026-04-06')
+    expect(result).toBe('2026-05-01')
   })
 })
 
