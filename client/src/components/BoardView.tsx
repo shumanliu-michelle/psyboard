@@ -283,6 +283,7 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
 
     {drawerState.open && drawerState.columnId && (
       <TaskDrawer
+        key={drawerState.task?.id ?? `create-${drawerState.columnId}`}
         mode={drawerState.mode}
         task={drawerState.task}
         initialTitle={drawerState.initialTitle}
