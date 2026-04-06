@@ -114,7 +114,7 @@ const task3: Task = {
   order: 0,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  completedAt: '2026-01-02T00:00:00.000Z',
+  completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // yesterday
 }
 
 describe('BoardView', () => {
