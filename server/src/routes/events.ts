@@ -10,13 +10,23 @@ export function broadcast(): void {
   const encoder = new TextEncoder()
   const encoded = encoder.encode(message)
 
+  // Collect disconnected clients first to avoid mutating Set during iteration
+  const deadClients: Response[] = []
+
   for (const client of clients) {
     try {
       client.write(encoded)
     } catch {
-      // Client disconnected — clean up on next iteration
-      clients.delete(client)
+      // Client disconnected — it may have closed the connection mid-write.
+      // We log errors silently since disconnected clients are expected and
+      // will be cleaned up below rather than during iteration.
+      deadClients.push(client)
     }
+  }
+
+  // Remove disconnected clients after iteration completes
+  for (const dead of deadClients) {
+    clients.delete(dead)
   }
 }
 
@@ -33,8 +43,25 @@ router.get('/', (req, res) => {
   // Register client
   clients.add(res)
 
+  // Keep connection alive with periodic heartbeat
+  const heartbeat = setInterval(() => {
+    const deadClients: Response[] = []
+    for (const client of clients) {
+      try {
+        client.write(': heartbeat\n\n')
+      } catch {
+        // Client disconnected — collect for cleanup
+        deadClients.push(client)
+      }
+    }
+    for (const dead of deadClients) {
+      clients.delete(dead)
+    }
+  }, 30000)
+
   // Clean up on close
   req.on('close', () => {
+    clearInterval(heartbeat)
     clients.delete(res)
   })
 })
