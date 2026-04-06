@@ -50,7 +50,13 @@ router.delete('/:id', (req, res) => {
 
     deleteColumn(id)
     res.status(204).send()
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      if (err.message === 'Cannot delete system column') {
+        res.status(403).json({ error: err.message })
+        return
+      }
+    }
     res.status(500).json({ error: 'Failed to delete column' })
   }
 })
