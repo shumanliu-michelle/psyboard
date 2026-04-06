@@ -418,11 +418,12 @@ export function TaskDrawer({
               </button>
             )}
             {task.recurrence ? (
-              <>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   className="btn-danger-full btn-delete"
                   onClick={handleDeleteSingle}
                   disabled={saving}
+                  style={{ flex: 1 }}
                 >
                   Delete this occurrence
                 </button>
@@ -430,10 +431,11 @@ export function TaskDrawer({
                   className="btn-danger-full btn-delete"
                   onClick={handleDeleteAll}
                   disabled={saving}
+                  style={{ flex: 1 }}
                 >
                   Delete all future occurrences
                 </button>
-              </>
+              </div>
             ) : (
               <button
                 className="btn-danger-full btn-delete"
