@@ -467,3 +467,94 @@ describe('updateTask — recurring task completion', () => {
     expect(nextTask?.assignee).toBe('SL')
   })
 })
+
+describe('PATCH /api/tasks/:id — expectedUpdatedAt (optimistic locking)', () => {
+  beforeEach(() => {
+    writeBoard(createTestBoard())
+  })
+
+  async function createTask(title: string, columnId: string) {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title, columnId })
+    return res.body
+  }
+
+  it('succeeds when expectedUpdatedAt matches current updatedAt', async () => {
+    const task = await createTask('My task', BACKLOG_COLUMN_ID)
+    const originalUpdatedAt = task.updatedAt
+
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: 'Updated title', expectedUpdatedAt: originalUpdatedAt })
+
+    expect(res.status).toBe(200)
+    expect(res.body.title).toBe('Updated title')
+  })
+
+  it('succeeds when expectedUpdatedAt is not provided (backwards compatible)', async () => {
+    const task = await createTask('My task', BACKLOG_COLUMN_ID)
+
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: 'Updated title' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.title).toBe('Updated title')
+  })
+
+  it('returns 409 when task was modified since expectedUpdatedAt', async () => {
+    const task = await createTask('My task', BACKLOG_COLUMN_ID)
+    const originalUpdatedAt = task.updatedAt
+
+    // Simulate an external modification — another tab updates the task
+    await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: 'Changed by other tab' })
+
+    // The user's stale copy still has originalUpdatedAt
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: 'My stale update', expectedUpdatedAt: originalUpdatedAt })
+
+    expect(res.status).toBe(409)
+    expect(res.body.error).toContain('modified')
+    expect(res.body.currentTask).toBeDefined()
+    expect(res.body.currentTask.title).toBe('Changed by other tab')
+  })
+
+  it('currentTask in 409 response contains the latest task data', async () => {
+    const task = await createTask('Original', BACKLOG_COLUMN_ID, { priority: 'high', assignee: 'SL' })
+    const originalUpdatedAt = task.updatedAt
+
+    // External update changes multiple fields
+    await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: 'New title', priority: 'low', assignee: 'KL' })
+
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: 'Stale update', expectedUpdatedAt: originalUpdatedAt })
+
+    expect(res.status).toBe(409)
+    expect(res.body.currentTask.title).toBe('New title')
+    expect(res.body.currentTask.priority).toBe('low')
+    expect(res.body.currentTask.assignee).toBe('KL')
+    expect(res.body.currentTask.updatedAt).not.toBe(originalUpdatedAt)
+  })
+
+  it('task.updatedAt changes on every successful update', async () => {
+    const task = await createTask('My task', BACKLOG_COLUMN_ID)
+    const firstUpdatedAt = task.updatedAt
+
+    // Wait a tiny bit so the timestamp would differ (ISO string precision is ms)
+    await new Promise(r => setTimeout(r, 1))
+
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ title: 'Updated', expectedUpdatedAt: firstUpdatedAt })
+
+    expect(res.status).toBe(200)
+    expect(res.body.updatedAt).not.toBe(firstUpdatedAt)
+  })
+})

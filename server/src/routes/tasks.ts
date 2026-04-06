@@ -1,6 +1,6 @@
 import express from 'express'
 import { Router } from 'express'
-import { createTask, updateTask, deleteTask, readBoard, reorderTasks } from '../store/boardStore.js'
+import { createTask, updateTask, deleteTask, readBoard, reorderTasks, ConflictError } from '../store/boardStore.js'
 import type { CreateTaskInput, UpdateTaskInput, Task } from '../types.js'
 import { CronExpressionParser } from 'cron-parser'
 import type { RecurrenceConfig } from '../types.js'
@@ -178,10 +178,15 @@ router.patch('/:id', (req, res) => {
       completedAt: updates.completedAt,
       recurrence: updates.recurrence as import('../types.js').RecurrenceConfig | null | undefined,
       suppressNextOccurrence: updates.suppressNextOccurrence,
+      expectedUpdatedAt: updates.expectedUpdatedAt,
     })
     res.json(task)
     broadcast(getTabId(req))
   } catch (err: unknown) {
+    if (err instanceof ConflictError) {
+      res.status(409).json({ error: 'Task was modified by someone else. Please reload and try again.', currentTask: err.currentTask })
+      return
+    }
     if (err instanceof Error && err.message.includes('not found')) {
       res.status(404).json({ error: 'Task not found' })
       return

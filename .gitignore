@@ -424,6 +424,7 @@ server/config/ha/
 server/data/
 server/data/*.tmp
 client/dist/
+server/dist/
 e2e/test-results/
 test-results/
 .superpowers/**

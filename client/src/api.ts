@@ -1,4 +1,4 @@
-import type { Board, Column, CreateColumnInput, CreateTaskInput, UpdateTaskInput } from './types'
+import type { Board, Column, CreateColumnInput, CreateTaskInput, UpdateTaskInput, Task } from './types'
 
 const BASE = '/api'
 
@@ -6,6 +6,15 @@ const BASE = '/api'
 let tabId: string | null = null
 export function setTabId(id: string): void {
   tabId = id
+}
+
+export class ConflictError extends Error {
+  readonly currentTask: Task
+  constructor(currentTask: Task) {
+    super('Task was modified by someone else. Please reload and try again.')
+    this.name = 'ConflictError'
+    this.currentTask = currentTask
+  }
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -19,6 +28,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    if (res.status === 409) {
+      throw new ConflictError((body as { currentTask: Task }).currentTask)
+    }
     throw new Error((body as { error: string }).error || `HTTP ${res.status}`)
   }
   if (res.status === 204) return undefined as T

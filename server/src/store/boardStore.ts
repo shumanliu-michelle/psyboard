@@ -290,6 +290,15 @@ export function createTask(
   return task
 }
 
+export class ConflictError extends Error {
+  readonly currentTask: Task
+  constructor(currentTask: Task) {
+    super(`Task was modified externally`)
+    this.name = 'ConflictError'
+    this.currentTask = currentTask
+  }
+}
+
 export function updateTask(id: string, updates: {
   title?: string
   description?: string
@@ -302,11 +311,17 @@ export function updateTask(id: string, updates: {
   completedAt?: string
   recurrence?: { kind: string; mode: string; intervalDays?: number; cronExpr?: string; daysOfWeek?: number[]; dayOfMonth?: number; timezone?: string } | null
   suppressNextOccurrence?: boolean
+  expectedUpdatedAt?: string
 }): Task {
   const board = readBoard()
   const task = board.tasks.find(t => t.id === id)
   if (!task) {
     throw new Error(`Task not found: ${id}`)
+  }
+
+  // Optimistic locking: reject if task was modified since the user opened the editor
+  if (updates.expectedUpdatedAt !== undefined && task.updatedAt !== updates.expectedUpdatedAt) {
+    throw new ConflictError(task)
   }
 
   const previousColumnId = task.columnId

@@ -85,4 +85,5 @@ export type UpdateTaskInput = {
   completedAt?: string
   recurrence?: RecurrenceConfig | null  // null = clear recurrence
   suppressNextOccurrence?: boolean
+  expectedUpdatedAt?: string  // optimistic locking — reject if task was modified since
 }

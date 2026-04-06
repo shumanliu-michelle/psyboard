@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Task, TaskPriority, RecurrenceConfig, RecurrenceKind } from '../types'
 import { DONE_COLUMN_ID } from '../types'
-import { api } from '../api'
+import { api, ConflictError } from '../api'
 
 type DrawerMode = 'create' | 'edit'
 
@@ -120,12 +120,17 @@ export function TaskDrawer({
           priority: priority ?? null,
           assignee: assignee ?? null,
           recurrence: recurrence ?? null,
+          expectedUpdatedAt: task.updatedAt,
         })
       }
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save task')
+      if (err instanceof ConflictError) {
+        setError('This task was modified in another tab. Please close and reopen the drawer to continue.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to save task')
+      }
     } finally {
       setSaving(false)
     }
@@ -138,11 +143,16 @@ export function TaskDrawer({
       await api.updateTask(task.id, {
         columnId: DONE_COLUMN_ID,
         completedAt: new Date().toISOString(),
+        expectedUpdatedAt: task.updatedAt,
       })
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to mark done')
+      if (err instanceof ConflictError) {
+        setError('This task was modified in another tab. Please close and reopen the drawer to continue.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to mark done')
+      }
     } finally {
       setSaving(false)
     }
@@ -153,12 +163,16 @@ export function TaskDrawer({
     setSaving(true)
     try {
       // Move to Done first (creates next occurrence), then delete this task
-      await api.updateTask(task.id, { columnId: DONE_COLUMN_ID })
+      await api.updateTask(task.id, { columnId: DONE_COLUMN_ID, expectedUpdatedAt: task.updatedAt })
       await api.deleteTask(task.id)
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete task')
+      if (err instanceof ConflictError) {
+        setError('This task was modified in another tab. Please close and reopen the drawer to continue.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to delete task')
+      }
     } finally {
       setSaving(false)
     }
@@ -172,12 +186,17 @@ export function TaskDrawer({
       await api.updateTask(task.id, {
         columnId: DONE_COLUMN_ID,
         suppressNextOccurrence: true,
+        expectedUpdatedAt: task.updatedAt,
       })
       await api.deleteTask(task.id)
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete task')
+      if (err instanceof ConflictError) {
+        setError('This task was modified in another tab. Please close and reopen the drawer to continue.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to delete task')
+      }
     } finally {
       setSaving(false)
     }
