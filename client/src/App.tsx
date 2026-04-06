@@ -33,9 +33,13 @@ export default function App() {
     const es = new EventSource(`/api/events?tabId=${tabIdRef.current}`)
     es.onmessage = (event) => {
       const data = JSON.parse(event.data)
+      console.log(`[SSE] Received board_updated (source: ${data.tabId ?? 'null'}, mine: ${tabIdRef.current})`)
       // Ignore events that originated from this tab
       if (data.tabId && data.tabId !== tabIdRef.current) {
+        console.log(`[SSE] Processing board_updated — triggering refresh`)
         loadBoard()
+      } else {
+        console.log(`[SSE] Ignoring board_updated — same tab`)
       }
     }
     es.onerror = () => {
