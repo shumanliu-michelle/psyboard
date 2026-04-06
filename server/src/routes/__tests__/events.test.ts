@@ -177,4 +177,62 @@ describe('broadcast() — tabId behavior', () => {
         })
     }, 50)
   })
+
+  it('broadcast includes {source:"tab",created} when a task is created', (done) => {
+    const sseReq = request(app).get('/api/events').buffer(true)
+    setTimeout(() => {
+      request(app)
+        .post('/api/tasks')
+        .set('X-Tab-Id', 'my-tab')
+        .send({ title: 'New task', columnId: BACKLOG_COLUMN_ID })
+        .end(() => {
+          sseReq.end((_err, res) => {
+            expect(res.text).toMatch(/"source":"tab"/)
+            expect(res.text).toMatch(/"created"/)
+            done()
+          })
+        })
+    }, 50)
+  })
+
+  it('broadcast includes {source:"tab",updated} when a task is patched', (done) => {
+    const sseReq = request(app).get('/api/events').buffer(true)
+    setTimeout(async () => {
+      const create = await request(app).post('/api/tasks').send({ title: 'Task to update', columnId: BACKLOG_COLUMN_ID })
+      const taskId = create.body.id
+      setTimeout(() => {
+        request(app)
+          .patch(`/api/tasks/${taskId}`)
+          .set('X-Tab-Id', 'my-tab')
+          .send({ title: 'Updated title' })
+          .end(() => {
+            sseReq.end((_err, res) => {
+              expect(res.text).toMatch(/"source":"tab"/)
+              expect(res.text).toMatch(/"updated"/)
+              done()
+            })
+          })
+      }, 50)
+    }, 50)
+  })
+
+  it('broadcast includes {source:"tab",deleted} when a task is deleted', (done) => {
+    const sseReq = request(app).get('/api/events').buffer(true)
+    setTimeout(async () => {
+      const create = await request(app).post('/api/tasks').send({ title: 'Task to delete', columnId: BACKLOG_COLUMN_ID })
+      const taskId = create.body.id
+      setTimeout(() => {
+        request(app)
+          .delete(`/api/tasks/${taskId}`)
+          .set('X-Tab-Id', 'my-tab')
+          .end(() => {
+            sseReq.end((_err, res) => {
+              expect(res.text).toMatch(/"source":"tab"/)
+              expect(res.text).toMatch(/"deleted"/)
+              done()
+            })
+          })
+      }, 50)
+    }, 50)
+  })
 })
