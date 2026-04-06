@@ -174,6 +174,51 @@ describe('computeNextDate', () => {
     const result = computeNextDate('2026-04-01', 'monthly', config, '2026-04-06T10:00:00Z', '2026-04-06')
     expect(result).toBe('2026-05-01')
   })
+
+  it('fixed weekly skips past dates to find next future date', () => {
+    // Weekly task due Sunday March 29, not completed until Sunday April 5
+    // next = April 5 + 7 = April 12, but April 12 is in the future from April 5
+    const result = computeNextDate('2026-03-29', 'weekly', fixedConfig, '2026-04-05T10:00:00Z', '2026-04-05')
+    // March 29 + 7 = April 5 (todayStr), so need to skip to April 12
+    expect(result).toBe('2026-04-12')
+  })
+
+  it('fixed interval_days skips multiple intervals when very late', () => {
+    // Every 3 days, due April 5, not completed until April 14 (9 days late = 3 intervals)
+    const config: RecurrenceConfig = { kind: 'interval_days', mode: 'fixed', intervalDays: 3 }
+    // April 5 + 3 = April 8 (past), +3 = April 11 (past), +3 = April 14 (today), +3 = April 17
+    const result = computeNextDate('2026-04-05', 'interval_days', config, '2026-04-14T10:00:00Z', '2026-04-14')
+    expect(result).toBe('2026-04-17')
+  })
+
+  it('fixed weekdays skips to next future weekday when completed late', () => {
+    // Weekdays task: due Friday April 3, not completed until Monday April 6 (weekend in between)
+    // todayStr = Monday April 6, computed next = April 7 (Tuesday, future) — no skip needed
+    // But if completed on Friday April 10 (today), next = April 13 (Monday, future) — no skip
+    // More extreme: task due Monday April 6, not done until Friday April 10
+    // todayStr = 2026-04-10 (Friday), baseDate = 2026-04-06 (Monday), next = April 7 (Tuesday, future)
+    // Since Tuesday April 7 > Friday April 10? No, April 7 < April 10 — need to skip
+    // Skip through: April 7(Tue)→Apr 8(Wed)→Apr 9(Thu)→Apr 10(Fri=today, skip)→Apr 11(Sat,skip)→Apr 13(Mon)
+    const result = computeNextDate('2026-04-06', 'weekdays', fixedConfig, '2026-04-10T10:00:00Z', '2026-04-10')
+    expect(result).toBe('2026-04-13')
+  })
+
+  it('completion_based does NOT skip past dates — computes from completion date', () => {
+    // completion_based: monthly on day 15, completed May 15 → next = June 15 (from May 15 base)
+    // The skip-to-future logic must NOT apply to completion_based.
+    // This is the key difference from fixed: it computes from completion date, not original due date.
+    const config: RecurrenceConfig = { kind: 'monthly', mode: 'completion_based', dayOfMonth: 15 }
+    const result = computeNextDate('2026-04-15', 'monthly', config, '2026-05-15T10:00:00Z', '2026-05-15')
+    // completion_based: base is May 15 (completion), so next = June 15
+    expect(result).toBe('2026-06-15')
+  })
+
+  it('fixed daily skips to tomorrow when next lands exactly on today', () => {
+    // Daily task due April 5, completed April 6 (todayStr)
+    // April 5 + 1 = April 6 = todayStr, so skip to April 7
+    const result = computeNextDate('2026-04-05', 'daily', fixedConfig, '2026-04-06T10:00:00Z', '2026-04-06')
+    expect(result).toBe('2026-04-07')
+  })
 })
 
 describe('POST /api/tasks — recurrence validation', () => {

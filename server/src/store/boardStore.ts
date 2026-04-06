@@ -6,6 +6,7 @@ import type { Board, Column, Task, UpdateTaskInput, SystemKey } from '../types.j
 import { BACKLOG_COLUMN_ID, TODAY_COLUMN_ID, DONE_COLUMN_ID, ColumnKind } from '../types.js'
 import { reconcileBoard, reconcileTask } from './reconciliation.js'
 import { computeNextDate } from './recurrence.js'
+import { getTodayString } from './dates.js'
 
 const ORDER_GAP_THRESHOLD = 0.001
 
@@ -37,14 +38,6 @@ type LegacyColumn = Omit<Column, 'position' | 'kind' | 'systemKey' | 'createdAt'
   systemKey?: SystemKey
   createdAt?: string
   updatedAt?: string
-}
-
-function getTodayString(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
 }
 
 const SYSTEM_COLUMNS: Column[] = [

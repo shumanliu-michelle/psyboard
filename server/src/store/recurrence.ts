@@ -1,5 +1,6 @@
 import { CronExpressionParser } from 'cron-parser'
 import type { RecurrenceConfig, RecurrenceKind } from '../types.js'
+import { getTodayString } from './dates.js'
 
 /** Advance a date by one step for the given recurrence kind. Does NOT handle cron. */
 function advanceOneStep(dateStr: string, kind: RecurrenceKind, config: RecurrenceConfig): string | null {
@@ -50,7 +51,7 @@ export function computeNextDate(
 ): string | null {
   if (!currentDate) return null
 
-  const today = todayStr ?? new Date().toISOString().slice(0, 10)
+  const today = todayStr ?? getTodayString()
 
   // Cron is always completion-based (uses _baseTimestamp) and does not loop.
   if (kind === 'cron') {
