@@ -6,14 +6,10 @@ import { broadcast, type BroadcastSummary } from '../routes/events.js'
 
 const DEFAULT_POLL_INTERVAL_MINUTES = 5
 
-// entityId → interval timer id
-const activeTimers = new Map<string, ReturnType<typeof setInterval>>()
+// Single global timer id
+let globalTimerId: ReturnType<typeof setInterval> | null = null
 
-function getPollIntervalMinutes(alertPollMinutes: number | undefined, globalPollMinutes: number): number {
-  return alertPollMinutes ?? globalPollMinutes
-}
-
-async function checkSingleAlert(entityId: string, pollMinutes: number): Promise<void> {
+async function checkAllAlerts(): Promise<void> {
   try {
     const env = loadHAEnv()
     const config = loadHAConfig()
@@ -25,11 +21,7 @@ async function checkSingleAlert(entityId: string, pollMinutes: number): Promise<
       entityMap.set(entity.entity_id, entity)
     }
 
-    // Only evaluate the alert that triggered this poll
-    const alert = config.alerts.find(a => a.entityId === entityId)
-    if (!alert) return
-
-    const triggered = evaluateAlerts([alert], entityMap)
+    const triggered = evaluateAlerts(config.alerts, entityMap)
     const results = createTasksForAlerts(triggered)
 
     const created = results.filter(r => r.action === 'created').map(r => r.alert.taskTitle)
@@ -47,7 +39,7 @@ async function checkSingleAlert(entityId: string, pollMinutes: number): Promise<
       broadcast(undefined, summary)
     }
   } catch (err) {
-    console.error(`[HA Scheduler] Error checking ${entityId}:`, (err as Error).message)
+    console.error(`[HA Scheduler] Error during poll:`, (err as Error).message)
   }
 }
 
@@ -59,31 +51,28 @@ export function startScheduler(): void {
     console.warn(`[HA Scheduler] Not starting — HA not configured: ${(err as Error).message}`)
     return
   }
-  const defaultInterval = config.pollIntervalMinutes ?? DEFAULT_POLL_INTERVAL_MINUTES
 
-  for (const alert of config.alerts) {
-    const intervalMs = getPollIntervalMinutes(alert.pollIntervalMinutes, defaultInterval) * 60 * 1000
-    console.log(`[HA Scheduler] Scheduling ${alert.entityId} every ${intervalMs / 60000} min`)
+  const intervalMinutes = config.pollIntervalMinutes ?? DEFAULT_POLL_INTERVAL_MINUTES
+  const intervalMs = intervalMinutes * 60 * 1000
 
-    // Fire immediately on start
-    checkSingleAlert(alert.entityId, alert.pollIntervalMinutes ?? defaultInterval)
+  console.log(`[HA Scheduler] Scheduling all ${config.alerts.length} alerts every ${intervalMinutes} min`)
 
-    const timerId = setInterval(() => {
-      checkSingleAlert(alert.entityId, alert.pollIntervalMinutes ?? defaultInterval)
-    }, intervalMs)
+  // Fire immediately on start
+  checkAllAlerts()
 
-    activeTimers.set(alert.entityId, timerId)
-  }
+  globalTimerId = setInterval(() => {
+    checkAllAlerts()
+  }, intervalMs)
 }
 
 export function stopScheduler(): void {
-  for (const [entityId, timerId] of activeTimers) {
-    clearInterval(timerId)
-    activeTimers.delete(entityId)
+  if (globalTimerId !== null) {
+    clearInterval(globalTimerId)
+    globalTimerId = null
   }
   console.log('[HA Scheduler] Stopped')
 }
 
 export function getActiveTimers(): number {
-  return activeTimers.size
+  return globalTimerId !== null ? 1 : 0
 }
