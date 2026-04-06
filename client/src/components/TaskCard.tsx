@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import type { Task } from '../types'
 import { DONE_COLUMN_ID } from '../types'
 import { api } from '../api'
+import { useFilterContext } from '../context/FilterContext'
 
 interface TaskCardProps {
   task: Task
@@ -26,6 +27,9 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
   const [menuMode, setMenuMode] = useState<'main' | 'assign' | 'priority'>('main')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
+
+  const { isTaskDimmed } = useFilterContext()
+  const dimmed = isTaskDimmed(task)
 
   function formatDate(dateStr: string): string {
     const date = new Date(dateStr + 'T00:00:00')
@@ -135,8 +139,9 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         background: isOverdue ? '#fee2e2' : priorityBg,
         cursor: 'grab',
         touchAction: 'none',
+        opacity: dimmed ? 0.3 : 1,
       }}
-      className={`task-card${isDragging ? ' dragging' : ''}${isCompleted ? ' done' : ''}`}
+      className={`task-card${isDragging ? ' dragging' : ''}${isCompleted ? ' done' : ''}${dimmed ? ' dimmed' : ''}`}
       {...attributes}
       {...listeners}
       onClick={() => !isDragging && onOpenEdit()}

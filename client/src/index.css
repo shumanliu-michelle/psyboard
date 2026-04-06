@@ -843,3 +843,8 @@ button.filter-chip[data-assignee="none"].selected {
   color: #92400e;
   border-color: #fcd34d;
 }
+
+/* Dimmed state (search/filter) */
+.task-card.dimmed {
+  opacity: 0.3;
+}
