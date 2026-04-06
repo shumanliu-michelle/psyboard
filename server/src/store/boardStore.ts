@@ -6,6 +6,8 @@ import type { Board, Column, Task, UpdateTaskInput, SystemKey } from '../types.j
 import { BACKLOG_COLUMN_ID, TODAY_COLUMN_ID, DONE_COLUMN_ID, ColumnKind } from '../types.js'
 import { reconcileBoard } from './reconciliation.js'
 
+const ORDER_GAP_THRESHOLD = 0.001
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, '..', '..', 'data')
 const BOARD_FILE = path.join(DATA_DIR, 'board.json')
@@ -273,7 +275,6 @@ export function updateTask(id: string, updates: {
   dueDate?: string | null
   priority?: 'low' | 'medium' | 'high'
   completedAt?: string
-  manualOrder?: number
 }): Task {
   const board = readBoard()
   const task = board.tasks.find(t => t.id === id)
@@ -307,7 +308,6 @@ export function updateTask(id: string, updates: {
   if (updates.dueDate !== undefined) task.dueDate = updates.dueDate
   if (updates.priority !== undefined) task.priority = updates.priority === null ? undefined : updates.priority
   if (updates.completedAt !== undefined) task.completedAt = updates.completedAt
-  if (updates.manualOrder !== undefined) task.manualOrder = updates.manualOrder
   task.updatedAt = new Date().toISOString()
 
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
@@ -324,4 +324,108 @@ export function deleteTask(id: string): void {
   const board = readBoard()
   board.tasks = board.tasks.filter(t => t.id !== id)
   writeBoard(board)
+}
+
+export function reorderTasks(taskId: string, targetColumnId: string, newIndex: number): Task[] {
+  const board = readBoard()
+  const task = board.tasks.find(t => t.id === taskId)
+  if (!task) {
+    throw new Error(`Task not found: ${taskId}`)
+  }
+
+  const sourceColumnId = task.columnId
+  const isSameColumn = sourceColumnId === targetColumnId
+
+  // Verify target column exists
+  const targetColumn = board.columns.find(c => c.id === targetColumnId)
+  if (!targetColumn) {
+    throw new Error(`Column not found: ${targetColumnId}`)
+  }
+
+  // Helper to get order of task at index, or Infinity/-Infinity for boundaries
+  const getTasksInColumn = (columnId: string, excludeTaskId?: string) =>
+    board.tasks
+      .filter(t => t.columnId === columnId && t.id !== excludeTaskId)
+      .sort((a, b) => a.order - b.order)
+
+  const now = new Date().toISOString()
+
+  if (isSameColumn) {
+    // Same-column reorder
+    const colTasks = getTasksInColumn(sourceColumnId, taskId)
+    const prevOrder = newIndex > 0 ? colTasks[newIndex - 1].order : -Infinity
+    const nextOrder = newIndex < colTasks.length ? colTasks[newIndex].order : Infinity
+    const midpoint = (prevOrder + nextOrder) / 2
+
+    const needsRenumber = !Number.isFinite(midpoint) ||
+      midpoint - prevOrder < ORDER_GAP_THRESHOLD ||
+      nextOrder - midpoint < ORDER_GAP_THRESHOLD
+
+    if (needsRenumber) {
+      // Renumber all tasks in column
+      colTasks.splice(newIndex, 0, task)
+      colTasks.forEach((t, i) => {
+        t.order = i
+        t.updatedAt = now
+      })
+    } else {
+      // Only update the moved task
+      task.order = midpoint
+      task.updatedAt = now
+    }
+  } else {
+    // Cross-column move
+    // Renumber source column (moved task removed)
+    const sourceTasks = getTasksInColumn(sourceColumnId, taskId)
+    sourceTasks.forEach((t, i) => {
+      t.order = i
+      t.updatedAt = now
+    })
+
+    // Determine midpoint in target column
+    const targetTasks = getTasksInColumn(targetColumnId)
+    const prevOrder = newIndex > 0 ? targetTasks[newIndex - 1].order : -Infinity
+    const nextOrder = newIndex < targetTasks.length ? targetTasks[newIndex].order : Infinity
+    const midpoint = (prevOrder + nextOrder) / 2
+
+    const needsRenumber = !Number.isFinite(midpoint) ||
+      midpoint - prevOrder < ORDER_GAP_THRESHOLD ||
+      nextOrder - midpoint < ORDER_GAP_THRESHOLD
+
+    // Update moved task
+    task.columnId = targetColumnId
+    task.updatedAt = now
+
+    // Auto-set completedAt when moving into/out of Done
+    const previousColumnId = sourceColumnId
+    if (targetColumnId === DONE_COLUMN_ID && previousColumnId !== DONE_COLUMN_ID) {
+      task.completedAt = now
+    }
+    if (previousColumnId === DONE_COLUMN_ID && targetColumnId !== DONE_COLUMN_ID) {
+      task.completedAt = undefined
+    }
+
+    if (needsRenumber) {
+      // Insert at newIndex and renumber entire target column
+      targetTasks.splice(newIndex, 0, task)
+      targetTasks.forEach((t, i) => {
+        t.order = i
+        t.updatedAt = now
+      })
+    } else {
+      task.order = midpoint
+      // Source column already renumbered above
+    }
+  }
+
+  writeBoard(board)
+
+  // Return affected tasks
+  if (isSameColumn) {
+    return board.tasks.filter(t => t.columnId === sourceColumnId).sort((a, b) => a.order - b.order)
+  }
+  return [
+    ...board.tasks.filter(t => t.columnId === sourceColumnId).sort((a, b) => a.order - b.order),
+    ...board.tasks.filter(t => t.columnId === targetColumnId).sort((a, b) => a.order - b.order),
+  ]
 }
