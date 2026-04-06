@@ -284,18 +284,20 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
-        }}>
-          <div style={{ background: 'white', borderRadius: 8, padding: 24, maxWidth: 300, boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}>
+        }}
+        onClick={e => e.stopPropagation()}>
+          <div style={{ background: 'white', borderRadius: 8, padding: 24, maxWidth: 300, boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
+          onClick={e => e.stopPropagation()}>
             <p style={{ marginBottom: 16 }}>Delete "{task.title}"? This action cannot be undone.</p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
-                onClick={() => setConfirmDelete(false)}
+                onClick={e => { e.stopPropagation(); setConfirmDelete(false) }}
                 style={{ padding: '6px 12px', cursor: 'pointer', borderRadius: 6, border: '1px solid var(--border-default)', background: 'white' }}
               >
                 Cancel
               </button>
               <button
-                onClick={() => { setConfirmDelete(false); handleDelete() }}
+                onClick={e => { e.stopPropagation(); setConfirmDelete(false); handleDelete() }}
                 style={{ padding: '6px 12px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
               >
                 Delete
