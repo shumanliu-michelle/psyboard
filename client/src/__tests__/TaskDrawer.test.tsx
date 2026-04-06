@@ -208,14 +208,18 @@ describe('TaskDrawer — recurring task delete', () => {
     })
   })
 
-  it('delete single occurrence deletes without suppressing', async () => {
+  it('delete single occurrence creates next occurrence then deletes', async () => {
     const task = { ...mockTask, recurrence: { kind: 'daily' as const, mode: 'fixed' as const }, id: 'task-recurring' }
+    vi.mocked(api.updateTask).mockResolvedValue(task as Task)
     vi.mocked(api.deleteTask).mockResolvedValue(undefined)
 
     render(<TaskDrawer mode="edit" task={task as Task} columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: /delete this occurrence/i }))
 
-    expect(vi.mocked(api.updateTask)).not.toHaveBeenCalled()
+    expect(vi.mocked(api.updateTask)).toHaveBeenCalledWith(
+      'task-recurring',
+      expect.objectContaining({ columnId: 'col-done' })
+    )
     await waitFor(() => {
       expect(vi.mocked(api.deleteTask)).toHaveBeenCalledWith('task-recurring')
     })

@@ -142,6 +142,8 @@ export function TaskDrawer({
 
   async function handleDeleteSingle() {
     if (!task) return
+    // Move to Done first (creates next occurrence), then delete this task
+    await api.updateTask(task.id, { columnId: DONE_COLUMN_ID })
     await api.deleteTask(task.id)
     onSaved()
     onClose()
