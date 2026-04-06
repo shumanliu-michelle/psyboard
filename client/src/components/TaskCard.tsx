@@ -165,7 +165,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         )}
         {task.dueDate && !isCompleted && (
           <div style={{ fontSize: 11, color: isOverdue ? '#dc2626' : '#94a3b8', marginTop: 2 }}>
-            Due: {formatDate(task.dueDate)}
+            Due {formatDate(task.dueDate)}
           </div>
         )}
         {isCompleted && task.completedAt && (

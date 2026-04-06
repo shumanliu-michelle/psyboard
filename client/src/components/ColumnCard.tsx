@@ -6,16 +6,6 @@ import type { Column, Task } from '../types'
 import { TaskCard, KebabIcon } from './TaskCard'
 import { getColumnColor } from '../styles/columnColors'
 
-const GripIcon = () => (
-  <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" style={{ flexShrink: 0 }}>
-    <circle cx="2" cy="2.5" r="1.5" />
-    <circle cx="8" cy="2.5" r="1.5" />
-    <circle cx="2" cy="8" r="1.5" />
-    <circle cx="8" cy="8" r="1.5" />
-    <circle cx="2" cy="13.5" r="1.5" />
-    <circle cx="8" cy="13.5" r="1.5" />
-  </svg>
-)
 import { QuickAddForm } from './QuickAddForm'
 import { api } from '../api'
 

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import { BoardView } from '../components/BoardView'
+import { FilterProvider } from '../context/FilterContext'
 import type { Board, Column, Task } from '../types'
 import { BACKLOG_COLUMN_ID, TODAY_COLUMN_ID, DONE_COLUMN_ID } from '../types'
 
@@ -125,7 +126,7 @@ describe('BoardView', () => {
 
   it('renders all three system columns (Backlog, Today, Done)', () => {
     const board = makeBoard([backlogColumn, todayColumn, doneColumn], [])
-    render(<BoardView board={board} onRefresh={onRefresh} />)
+    render(<FilterProvider tasks={board.tasks}><BoardView board={board} onRefresh={onRefresh} /></FilterProvider>)
     expect(screen.getByText('Backlog')).toBeTruthy()
     expect(screen.getByText('Today')).toBeTruthy()
     expect(screen.getByText('Done')).toBeTruthy()
@@ -136,7 +137,7 @@ describe('BoardView', () => {
       [backlogColumn, todayColumn, doneColumn],
       [task1, task2, task3]
     )
-    render(<BoardView board={board} onRefresh={onRefresh} />)
+    render(<FilterProvider tasks={board.tasks}><BoardView board={board} onRefresh={onRefresh} /></FilterProvider>)
     expect(screen.getByText('Task in Backlog')).toBeTruthy()
     expect(screen.getByText('Task in Today')).toBeTruthy()
     expect(screen.getByText('Completed Task')).toBeTruthy()
@@ -147,7 +148,7 @@ describe('BoardView', () => {
       [backlogColumn, todayColumn, doneColumn],
       [task1, task2, task3]
     )
-    const { container } = render(<BoardView board={board} onRefresh={onRefresh} />)
+    const { container } = render(<FilterProvider tasks={board.tasks}><BoardView board={board} onRefresh={onRefresh} /></FilterProvider>)
     // The backlog column should contain "Task in Backlog"
     // The today column should contain "Task in Today"
     // The done column should contain "Completed Task"
@@ -158,12 +159,12 @@ describe('BoardView', () => {
 
   it('renders empty board without errors', () => {
     const board = makeBoard([backlogColumn, todayColumn, doneColumn], [])
-    expect(() => render(<BoardView board={board} onRefresh={onRefresh} />)).not.toThrow()
+    expect(() => render(<FilterProvider tasks={board.tasks}><BoardView board={board} onRefresh={onRefresh} /></FilterProvider>)).not.toThrow()
   })
 
   it('shows the Add column button', () => {
     const board = makeBoard([backlogColumn, todayColumn, doneColumn], [])
-    render(<BoardView board={board} onRefresh={onRefresh} />)
+    render(<FilterProvider tasks={board.tasks}><BoardView board={board} onRefresh={onRefresh} /></FilterProvider>)
     expect(screen.getByText('+ Add column')).toBeTruthy()
   })
 })

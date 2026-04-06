@@ -3,6 +3,7 @@ import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TaskCard } from '../components/TaskCard'
+import { FilterProvider } from '../context/FilterContext'
 import type { Task } from '../types'
 import { DONE_COLUMN_ID } from '../types'
 
@@ -55,12 +56,14 @@ describe('TaskCard', () => {
 
   const renderTaskCard = (task: Task) => {
     return render(
-      <TaskCard
-        task={task}
-        onUpdated={mockOnUpdated}
-        onDeleted={mockOnDeleted}
-        onOpenEdit={mockOnOpenEdit}
-      />
+      <FilterProvider tasks={[task]}>
+        <TaskCard
+          task={task}
+          onUpdated={mockOnUpdated}
+          onDeleted={mockOnDeleted}
+          onOpenEdit={mockOnOpenEdit}
+        />
+      </FilterProvider>
     )
   }
 

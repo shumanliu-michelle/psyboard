@@ -3,6 +3,7 @@ import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ColumnCard } from '../components/ColumnCard'
+import { FilterProvider } from '../context/FilterContext'
 import type { Column, Task } from '../types'
 import { DONE_COLUMN_ID, BACKLOG_COLUMN_ID } from '../types'
 
@@ -83,12 +84,14 @@ describe('ColumnCard', () => {
 
   const renderColumnCard = (column: Column, tasks: Task[] = []) => {
     return render(
-      <ColumnCard
-        column={column}
-        tasks={tasks}
-        onRefresh={mockOnRefresh}
-        onOpenDrawer={mockOnOpenDrawer}
-      />
+      <FilterProvider tasks={tasks}>
+        <ColumnCard
+          column={column}
+          tasks={tasks}
+          onRefresh={mockOnRefresh}
+          onOpenDrawer={mockOnOpenDrawer}
+        />
+      </FilterProvider>
     )
   }
 
