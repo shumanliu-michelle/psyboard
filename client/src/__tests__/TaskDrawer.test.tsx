@@ -149,7 +149,7 @@ describe('TaskDrawer — recurrence fields', () => {
     render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
     const select = screen.getByRole('combobox', { name: /repeat/i })
     await user.selectOptions(select, 'interval_days')
-    expect(screen.getByLabelText(/every/i)).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { id: 'recurrence-interval' })).toBeInTheDocument()
   })
 
   it('shows mode toggle when recurrence is set', async () => {
