@@ -105,7 +105,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
   undefined
 
   const todayStr = new Date().toLocaleDateString('en-CA')
-  const isOverdue = !!task.dueDate && new Date(task.dueDate + 'T00:00:00') < new Date(todayStr + 'T00:00:00') && !isCompleted
+  const isOverdue = !!task.dueDate && task.dueDate < todayStr && !isCompleted
 
   return (
     <div
