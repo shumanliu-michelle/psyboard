@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
 import type { Column, Task } from '../types'
 import { TaskCard, KebabIcon } from './TaskCard'
-import { getColumnColor, CUSTOM_COLUMN_COLOR } from '../styles/columnColors'
+import { getColumnColor } from '../styles/columnColors'
 
 const GripIcon = () => (
   <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" style={{ flexShrink: 0 }}>
@@ -55,8 +55,9 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
     return () => document.removeEventListener('mousedown', handler)
   }, [showMenu])
 
-  const customColors = CUSTOM_COLUMN_COLOR
-  const systemColors = getColumnColor(column.systemKey)
+  const systemColors = column.kind === 'system'
+    ? getColumnColor(column.systemKey)
+    : getColumnColor(undefined, column.accent)
 
   return (
     <div
@@ -79,20 +80,19 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         className="column-header"
         ref={menuRef}
         style={{
-          borderTop: `2px solid ${customColors.accent}`,
+          borderBottom: `2px solid ${systemColors.accent}`,
           cursor: 'grab',
           touchAction: 'none',
           position: 'relative',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{
-            width: 7,
-            height: 7,
-            borderRadius: '50%',
-            background: customColors.accent,
-            flexShrink: 0,
-          }} />
+          <span className="task-count" style={{
+            background: systemColors.bg,
+            color: systemColors.accent,
+          }}>
+            {tasks.length}
+          </span>
           {renaming ? (
             <input
               autoFocus
@@ -117,17 +117,11 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
               }}
             />
           ) : (
-            <h3 style={{ color: customColors.accent, flex: 1 }}>
+            <h3 style={{ color: systemColors.accent, flex: 1 }}>
               {column.title}
             </h3>
           )}
         </div>
-        <span className="task-count" style={{
-          background: customColors.bg,
-          color: customColors.accent,
-        }}>
-          {tasks.length}
-        </span>
         <div style={{ position: 'relative' }}>
           <button
             onClick={e => { e.stopPropagation(); setShowMenu(!showMenu) }}
@@ -194,30 +188,23 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         {...columnListeners}
         className="column-header"
         style={{
-          borderTop: `2px solid ${systemColors.accent}`,
+          borderBottom: `2px solid ${systemColors.accent}`,
           cursor: 'grab',
           touchAction: 'none',
           position: 'relative',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{
-            width: 7,
-            height: 7,
-            borderRadius: '50%',
-            background: systemColors.accent,
-            flexShrink: 0,
-          }} />
+          <span className="task-count" style={{
+            background: systemColors.bg,
+            color: systemColors.accent,
+          }}>
+            {tasks.length}
+          </span>
           <h3 style={{ color: systemColors.accent, flex: 1 }}>
             {column.title}
           </h3>
         </div>
-        <span className="task-count" style={{
-          background: systemColors.bg,
-          color: systemColors.accent,
-        }}>
-          {tasks.length}
-        </span>
       </div>
     )}
 

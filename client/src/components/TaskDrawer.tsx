@@ -87,7 +87,7 @@ export function TaskDrawer({
           description: description.trim() || undefined,
           doDate: doDate || null,
           dueDate: dueDate || null,
-          priority,
+          priority: priority ?? null,
           assignee: assignee ?? null,
         })
       }
@@ -234,6 +234,14 @@ export function TaskDrawer({
                 disabled={isCompleted}
               >
                 High
+              </button>
+              <button
+                type="button"
+                className={`priority-none${priority === undefined ? ' selected' : ''}`}
+                onClick={() => setPriority(undefined)}
+                disabled={isCompleted}
+              >
+                None
               </button>
             </div>
           </div>

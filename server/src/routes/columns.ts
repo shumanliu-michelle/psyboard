@@ -4,15 +4,20 @@ import { createColumn, deleteColumn, readBoard, updateColumn, reorderColumns } f
 const router = Router()
 
 router.post('/', (req, res) => {
-  const { title } = req.body as { title?: string }
+  const { title, accent } = req.body as { title?: string; accent?: string }
 
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
     res.status(400).json({ error: 'Column title is required and must be non-empty' })
     return
   }
 
+  if (accent !== undefined && typeof accent !== 'string') {
+    res.status(400).json({ error: 'Accent must be a string' })
+    return
+  }
+
   try {
-    const column = createColumn(title.trim())
+    const column = createColumn(title.trim(), accent)
     res.status(201).json(column)
   } catch (err: unknown) {
     if (err instanceof Error) {

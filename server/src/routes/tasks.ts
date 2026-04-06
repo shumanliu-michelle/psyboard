@@ -79,7 +79,7 @@ router.patch('/:id', (req, res) => {
   }
 
   // Validate priority
-  if (updates.priority !== undefined && !['low', 'medium', 'high'].includes(updates.priority)) {
+  if (updates.priority !== undefined && updates.priority !== null && !['low', 'medium', 'high'].includes(updates.priority)) {
     res.status(400).json({ error: 'priority must be low, medium, or high' })
     return
   }

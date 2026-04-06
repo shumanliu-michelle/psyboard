@@ -13,7 +13,7 @@ export function AddColumnForm({ onAdded, onCancel }: AddColumnFormProps) {
     e.preventDefault()
     if (!title.trim()) return
     try {
-      await api.createColumn({ title: title.trim() })
+      await api.createColumn({ title: title.trim(), accent: '#6366f1' })
       setTitle('')
       onAdded()
     } catch (err) {

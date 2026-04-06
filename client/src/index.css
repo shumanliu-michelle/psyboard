@@ -100,7 +100,9 @@ body {
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
+  border: 1px solid #e2e8f0;
   border-left: 3px solid transparent;
+  overflow: visible;
 }
 
 .task-card:active {
@@ -390,6 +392,12 @@ body {
   background: #f0fdf4;
   border-color: var(--priority-low);
   color: #15803d;
+}
+
+.task-drawer-btn-group button.priority-none.selected {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #6b7280;
 }
 
 .task-drawer-btn-group button.assignee-sl.selected {

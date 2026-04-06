@@ -11,6 +11,7 @@ export type Column = {
   kind: ColumnKind
   systemKey?: SystemKey  // only for kind === 'system'
   position: number       // replaces `order`, lower = more left
+  accent?: string        // hex color for custom columns, e.g. '#ec4899'
   createdAt: string
   updatedAt: string
 }
@@ -45,7 +46,7 @@ export type Board = {
   tasks: Task[]
 }
 
-export type CreateColumnInput = { title: string }
+export type CreateColumnInput = { title: string; accent?: string }
 export type CreateTaskInput = {
   title: string
   columnId: string
@@ -63,7 +64,7 @@ export type UpdateTaskInput = {
   assignee?: 'SL' | 'KL' | null
   doDate?: string | null
   dueDate?: string | null
-  priority?: TaskPriority
+  priority?: TaskPriority | null
   completedAt?: string
   manualOrder?: number
 }

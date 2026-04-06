@@ -125,7 +125,7 @@ export function writeBoard(board: Board): void {
 }
 
 // Column operations
-export function createColumn(title: string): Column {
+export function createColumn(title: string, accent?: string): Column {
   if (RESERVED_NAMES.includes(title.trim())) {
     throw new Error('Cannot create column with a reserved name')
   }
@@ -137,6 +137,7 @@ export function createColumn(title: string): Column {
     title: title.trim(),
     kind: 'custom',
     position: board.columns.length,
+    accent,
     createdAt: now,
     updatedAt: now,
   }
@@ -304,7 +305,7 @@ export function updateTask(id: string, updates: {
   if (updates.assignee !== undefined) task.assignee = updates.assignee === null ? undefined : updates.assignee
   if (updates.doDate !== undefined) task.doDate = updates.doDate
   if (updates.dueDate !== undefined) task.dueDate = updates.dueDate
-  if (updates.priority !== undefined) task.priority = updates.priority
+  if (updates.priority !== undefined) task.priority = updates.priority === null ? undefined : updates.priority
   if (updates.completedAt !== undefined) task.completedAt = updates.completedAt
   if (updates.manualOrder !== undefined) task.manualOrder = updates.manualOrder
   task.updatedAt = new Date().toISOString()

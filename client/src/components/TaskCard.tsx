@@ -12,16 +12,6 @@ interface TaskCardProps {
   onOpenEdit: () => void
 }
 
-const GripIcon = () => (
-  <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" style={{ flexShrink: 0, cursor: 'grab' }}>
-    <circle cx="2" cy="2.5" r="1.5" />
-    <circle cx="8" cy="2.5" r="1.5" />
-    <circle cx="2" cy="8" r="1.5" />
-    <circle cx="8" cy="8" r="1.5" />
-    <circle cx="2" cy="13.5" r="1.5" />
-    <circle cx="8" cy="13.5" r="1.5" />
-  </svg>
-)
 
 export const KebabIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -35,6 +25,11 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
   const [showMenu, setShowMenu] = useState(false)
   const [menuMode, setMenuMode] = useState<'main' | 'assign' | 'priority'>('main')
   const popoverRef = useRef<HTMLDivElement>(null)
+
+  function formatDate(dateStr: string): string {
+    const date = new Date(dateStr + 'T00:00:00')
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
 
   // Close menu on click outside
   useEffect(() => {
@@ -88,7 +83,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
 
   async function handleQuickPriority(priority: 'low' | 'medium' | 'high' | null) {
     try {
-      await api.updateTask(task.id, { priority: priority ?? undefined })
+      await api.updateTask(task.id, { priority })
       onUpdated()
       setShowMenu(false)
       setMenuMode('main')
@@ -103,6 +98,15 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
   task.priority === 'low'    ? '#22c55e' :
   undefined
 
+  const priorityBg =
+  task.priority === 'high'   ? '#fef2f2' :
+  task.priority === 'medium' ? '#fffbeb' :
+  task.priority === 'low'    ? '#f0fdf4' :
+  undefined
+
+  const today = new Date().toISOString().split('T')[0]
+  const isOverdue = !!task.dueDate && task.dueDate < today && !isCompleted
+
   return (
     <div
       ref={setNodeRef}
@@ -110,28 +114,17 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         ...style,
         display: 'flex',
         flexDirection: 'row',
-        borderLeft: task.priority ? `3px solid ${priorityColor}` : '3px solid transparent',
-      }}
-      className={`task-card${isDragging ? ' dragging' : ''}`}
-      onClick={() => onOpenEdit()}
-    >
-      {/* Left: drag handler — full height */}
-      <div style={{
-        width: 28,
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        borderLeft: isOverdue ? '4px solid #dc2626' : task.priority ? `3px solid ${priorityColor}` : '3px solid transparent',
+        background: isOverdue ? '#fee2e2' : priorityBg,
         cursor: 'grab',
         touchAction: 'none',
       }}
-        {...attributes}
-        {...listeners}
-      >
-        <GripIcon />
-      </div>
-
-      {/* Middle: title + description — fills remaining width, centered */}
+      className={`task-card${isDragging ? ' dragging' : ''}`}
+      {...attributes}
+      {...listeners}
+      onClick={() => !isDragging && onOpenEdit()}
+    >
+      {/* Middle: title + description — fills remaining width */}
       <div style={{
         flex: 1,
         display: 'flex',
@@ -139,12 +132,17 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         justifyContent: 'center',
         minWidth: 0,
       }}>
-        <div className="task-card-title" style={{ paddingLeft: 4 }} onDoubleClick={() => onOpenEdit()}>
+        <div className="task-card-title" style={{ color: isOverdue ? '#dc2626' : undefined }} onDoubleClick={() => onOpenEdit()}>
           {task.title}
         </div>
         {task.description && (
           <div className="task-description">
             {task.description}
+          </div>
+        )}
+        {task.dueDate && (
+          <div style={{ fontSize: 11, color: isOverdue ? '#dc2626' : '#94a3b8', marginTop: 2 }}>
+            Due: {formatDate(task.dueDate)}
           </div>
         )}
       </div>
@@ -168,14 +166,14 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         {showMenu && (
           <div ref={popoverRef} style={{
             position: 'absolute',
-            top: 0,
-            left: 28,
+            top: 20,
+            right: 0,
             background: 'white',
             border: '1px solid #e5e7eb',
             borderRadius: 6,
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             padding: 4,
-            zIndex: 10,
+            zIndex: 9999,
             minWidth: 90,
           }}>
             {menuMode === 'main' && (
@@ -214,7 +212,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
               <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <button
                   onClick={e => { e.stopPropagation(); handleQuickAssign('SL') }}
-                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: task.assignee === 'SL' ? '#065f46' : '#374151', fontWeight: task.assignee === 'SL' ? 600 : 400 }}
+                  style={{ background: 'none', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: task.assignee === 'SL' ? '#ec4899' : '#374151', fontWeight: task.assignee === 'SL' ? 600 : 400 }}
                 >
                   SL
                 </button>
@@ -264,8 +262,8 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         )}
         {task.assignee && (
           <span style={{
-            background: task.assignee === 'SL' ? '#eef2ff' : '#dbeafe',
-            color: task.assignee === 'SL' ? '#6366f1' : '#1e40af',
+            background: task.assignee === 'SL' ? '#fdf2f8' : '#dbeafe',
+            color: task.assignee === 'SL' ? '#ec4899' : '#1e40af',
             borderRadius: '50%',
             width: 20,
             height: 20,
