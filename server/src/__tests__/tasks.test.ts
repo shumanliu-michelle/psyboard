@@ -302,3 +302,141 @@ describe('PATCH /api/tasks/:id — recurrence validation', () => {
     expect(res.body.recurrence).toBeUndefined()
   })
 })
+
+describe('updateTask — recurring task completion', () => {
+  beforeEach(() => {
+    // Reset board to known state
+    const board: Board = {
+      columns: [
+        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
+        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
+        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
+      ],
+      tasks: [],
+    }
+    writeBoard(board)
+  })
+
+  async function createTask(title: string, columnId: string, extra?: Record<string, unknown>) {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title, columnId, ...extra })
+    return res.body
+  }
+
+  it('sets completedAt when task moved to Done', async () => {
+    const task = await createTask('Test', BACKLOG_COLUMN_ID)
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID })
+    expect(res.status).toBe(200)
+    expect(res.body.completedAt).toBeDefined()
+  })
+
+  it('generates next occurrence when recurring task moved to Done', async () => {
+    const task = await createTask('Daily Task', BACKLOG_COLUMN_ID, {
+      doDate: '2026-04-05',
+      recurrence: { kind: 'daily', mode: 'fixed' },
+    })
+    expect(task.id).toBeDefined()
+
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID })
+    expect(res.status).toBe(200)
+    expect(res.body.completedAt).toBeDefined()
+
+    const boardRes = await request(app).get('/api/board')
+    const nextTasks = boardRes.body.tasks.filter((t: { previousOccurrenceId?: string }) => t.previousOccurrenceId === task.id)
+    expect(nextTasks).toHaveLength(1)
+    expect(nextTasks[0].title).toBe('Daily Task')
+    expect(nextTasks[0].doDate).toBe('2026-04-06')
+    expect(nextTasks[0].columnId).toBe(BACKLOG_COLUMN_ID)
+    expect(nextTasks[0].recurrenceRootId).toBe(task.id)
+  })
+
+  it('sets recurrenceRootId on first occurrence', async () => {
+    const task = await createTask('Daily Task', BACKLOG_COLUMN_ID, {
+      doDate: '2026-04-05',
+      recurrence: { kind: 'daily', mode: 'fixed' },
+    })
+
+    await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID })
+
+    const boardRes = await request(app).get('/api/board')
+    const nextTask = boardRes.body.tasks.find((t: { previousOccurrenceId?: string }) => t.previousOccurrenceId === task.id)
+    expect(nextTask?.recurrenceRootId).toBe(task.id)
+  })
+
+  it('is idempotent — does not create duplicate next occurrence', async () => {
+    const task = await createTask('Daily Task', BACKLOG_COLUMN_ID, {
+      doDate: '2026-04-05',
+      recurrence: { kind: 'daily', mode: 'fixed' },
+    })
+
+    await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID })
+
+    // Complete again — should be idempotent
+    await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID })
+
+    const boardRes = await request(app).get('/api/board')
+    const nextTasks = boardRes.body.tasks.filter((t: { previousOccurrenceId?: string }) => t.previousOccurrenceId === task.id)
+    expect(nextTasks).toHaveLength(1) // still only one
+  })
+
+  it('suppressNextOccurrence skips next occurrence creation', async () => {
+    const task = await createTask('Daily Task', BACKLOG_COLUMN_ID, {
+      doDate: '2026-04-05',
+      recurrence: { kind: 'daily', mode: 'fixed' },
+    })
+
+    const res = await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID, suppressNextOccurrence: true })
+    expect(res.status).toBe(200)
+    expect(res.body.completedAt).toBeDefined()
+
+    const boardRes = await request(app).get('/api/board')
+    const nextTasks = boardRes.body.tasks.filter((t: { previousOccurrenceId?: string }) => t.previousOccurrenceId === task.id)
+    expect(nextTasks).toHaveLength(0) // suppressed
+  })
+
+  it('next occurrence respects intervalDays', async () => {
+    const task = await createTask('Every 3 days', BACKLOG_COLUMN_ID, {
+      doDate: '2026-04-05',
+      recurrence: { kind: 'interval_days', mode: 'fixed', intervalDays: 3 },
+    })
+
+    await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID })
+
+    const boardRes = await request(app).get('/api/board')
+    const nextTask = boardRes.body.tasks.find((t: { previousOccurrenceId?: string }) => t.previousOccurrenceId === task.id)
+    expect(nextTask?.doDate).toBe('2026-04-08')
+  })
+
+  it('next occurrence inherits priority and assignee', async () => {
+    const task = await createTask('Important', BACKLOG_COLUMN_ID, {
+      doDate: '2026-04-05',
+      priority: 'high',
+      assignee: 'SL',
+      recurrence: { kind: 'daily', mode: 'fixed' },
+    })
+
+    await request(app)
+      .patch(`/api/tasks/${task.id}`)
+      .send({ columnId: DONE_COLUMN_ID })
+
+    const boardRes = await request(app).get('/api/board')
+    const nextTask = boardRes.body.tasks.find((t: { previousOccurrenceId?: string }) => t.previousOccurrenceId === task.id)
+    expect(nextTask?.priority).toBe('high')
+    expect(nextTask?.assignee).toBe('SL')
+  })
+})

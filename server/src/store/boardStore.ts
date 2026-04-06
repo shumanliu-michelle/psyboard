@@ -4,7 +4,8 @@ import { fileURLToPath } from 'url'
 import { randomUUID } from 'crypto'
 import type { Board, Column, Task, UpdateTaskInput, SystemKey } from '../types.js'
 import { BACKLOG_COLUMN_ID, TODAY_COLUMN_ID, DONE_COLUMN_ID, ColumnKind } from '../types.js'
-import { reconcileBoard } from './reconciliation.js'
+import { reconcileBoard, reconcileTask } from './reconciliation.js'
+import { computeNextDate } from './recurrence.js'
 
 const ORDER_GAP_THRESHOLD = 0.001
 
@@ -280,6 +281,7 @@ export function updateTask(id: string, updates: {
   priority?: 'low' | 'medium' | 'high'
   completedAt?: string
   recurrence?: { kind: string; mode: string; intervalDays?: number; cronExpr?: string; daysOfWeek?: number[]; dayOfMonth?: number; timezone?: string } | null
+  suppressNextOccurrence?: boolean
 }): Task {
   const board = readBoard()
   const task = board.tasks.find(t => t.id === id)
@@ -315,6 +317,62 @@ export function updateTask(id: string, updates: {
   if (updates.completedAt !== undefined) task.completedAt = updates.completedAt
   if (updates.recurrence !== undefined) task.recurrence = updates.recurrence === null ? undefined : updates.recurrence
   task.updatedAt = new Date().toISOString()
+
+  // Recurring task completion: generate next occurrence
+  const isMovingToDone = updates.columnId === DONE_COLUMN_ID && previousColumnId !== DONE_COLUMN_ID
+  const shouldSuppress = updates.suppressNextOccurrence === true
+
+  if (isMovingToDone && task.recurrence && !shouldSuppress) {
+    // Idempotency: skip if next occurrence already exists
+    const existingNext = board.tasks.find(t => t.previousOccurrenceId === task.id)
+    if (!existingNext) {
+      // Initialize recurrenceRootId if not set (this task becomes the chain root)
+      if (!task.recurrenceRootId) {
+        task.recurrenceRootId = task.id
+      }
+
+      // Compute next dates
+      const now = new Date().toISOString()
+      const nextDoDate = computeNextDate(
+        task.doDate ?? null,
+        task.recurrence.kind,
+        task.recurrence,
+        task.completedAt ?? now
+      )
+      const nextDueDate = computeNextDate(
+        task.dueDate ?? null,
+        task.recurrence.kind,
+        task.recurrence,
+        task.completedAt ?? now
+      )
+
+      // Build next occurrence task
+      const nextTask: Task = {
+        id: randomUUID(),
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        assignee: task.assignee,
+        columnId: BACKLOG_COLUMN_ID,
+        order: board.tasks.filter(t => t.columnId === BACKLOG_COLUMN_ID).length,
+        doDate: nextDoDate ?? undefined,
+        dueDate: nextDueDate ?? undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        recurrence: task.recurrence,
+        recurrenceRootId: task.recurrenceRootId,
+        previousOccurrenceId: task.id,
+      }
+
+      // Check reconciliation — does next task qualify for Today?
+      const reconciled = reconcileTask(nextTask, getTodayString())
+      if (reconciled) {
+        nextTask.columnId = reconciled.columnId
+      }
+
+      board.tasks.push(nextTask)
+    }
+  }
 
   // Reconciliation: promote any date-eligible tasks from Backlog to Today
   const promoted_updateTask = reconcileBoard(board, getTodayString())
