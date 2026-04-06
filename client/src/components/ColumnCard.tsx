@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
-import type { Column, Task, DONE_COLUMN_ID } from '../types'
+import type { Column, Task } from '../types'
 import { TaskCard, KebabIcon } from './TaskCard'
 import { getColumnColor } from '../styles/columnColors'
 
