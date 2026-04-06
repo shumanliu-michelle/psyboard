@@ -246,6 +246,9 @@ router.post('/reorder', (req, res) => {
 
   try {
     const tasks = reorderTasks(taskId, targetColumnId, newIndex)
+    const movedTask = tasks.find(t => t.id === taskId)
+    const summary: BroadcastSummary = { source: 'tab', created: [], updated: movedTask ? [movedTask] : [], deleted: [] }
+    broadcast(getTabId(req), summary)
     res.json({ tasks })
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes('not found')) {
