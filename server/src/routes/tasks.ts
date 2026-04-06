@@ -1,7 +1,42 @@
 import { Router } from 'express'
 import { createTask, updateTask, deleteTask, readBoard, reorderTasks } from '../store/boardStore.js'
-import type { CreateTaskInput, UpdateTaskInput } from '../types.js'
+import type { CreateTaskInput, UpdateTaskInput, Task } from '../types.js'
 import cronParser from 'cron-parser'
+import type { RecurrenceConfig } from '../types.js'
+
+function validateRecurrenceInput(
+  recurrence: RecurrenceConfig | undefined | null,
+  doDate?: string | null,
+  dueDate?: string | null,
+  existingTask?: Task | null
+): string | null {
+  if (recurrence === undefined || recurrence === null) return null
+  const hasDoDate = doDate && doDate.length > 0
+  const hasDueDate = dueDate && dueDate.length > 0
+  if (!hasDoDate && !hasDueDate && existingTask) {
+    const taskHasDoDate = existingTask.doDate && existingTask.doDate.length > 0
+    const taskHasDueDate = existingTask.dueDate && existingTask.dueDate.length > 0
+    if (!taskHasDoDate && !taskHasDueDate) {
+      return 'Recurring tasks must have at least a do date or due date.'
+    }
+  } else if (!hasDoDate && !hasDueDate) {
+    return 'Recurring tasks must have at least a do date or due date.'
+  }
+  if (recurrence.kind === 'interval_days') {
+    if (!recurrence.intervalDays || recurrence.intervalDays < 1) {
+      return 'Interval must be at least 1 day.'
+    }
+  }
+  if (recurrence.kind === 'cron') {
+    if (!recurrence.cronExpr) return 'Invalid recurrence rule.'
+    try {
+      cronParser.parseExpression(recurrence.cronExpr, { currentDate: new Date() })
+    } catch {
+      return 'Invalid recurrence rule.'
+    }
+  }
+  return null
+}
 
 const router = Router()
 
@@ -39,31 +74,10 @@ router.post('/', (req, res) => {
   }
 
   // Validate recurrence
-  if (recurrence !== undefined) {
-    const hasDoDate = doDate && doDate.length > 0
-    const hasDueDate = dueDate && dueDate.length > 0
-    if (!hasDoDate && !hasDueDate) {
-      res.status(400).json({ error: 'Recurring tasks must have at least a do date or due date.' })
-      return
-    }
-    if (recurrence.kind === 'interval_days') {
-      if (!recurrence.intervalDays || recurrence.intervalDays < 1) {
-        res.status(400).json({ error: 'Interval must be at least 1 day.' })
-        return
-      }
-    }
-    if (recurrence.kind === 'cron') {
-      if (!recurrence.cronExpr) {
-        res.status(400).json({ error: 'Invalid recurrence rule.' })
-        return
-      }
-      try {
-        cronParser.parseExpression(recurrence.cronExpr, { currentDate: new Date() })
-      } catch {
-        res.status(400).json({ error: 'Invalid recurrence rule.' })
-        return
-      }
-    }
+  const validationError = validateRecurrenceInput(recurrence, doDate, dueDate)
+  if (validationError) {
+    res.status(400).json({ error: validationError })
+    return
   }
 
   // Verify column exists
@@ -121,44 +135,17 @@ router.patch('/:id', (req, res) => {
   }
 
   // Validate recurrence
-  if (updates.recurrence !== undefined && updates.recurrence !== null) {
-    // Allow clearing recurrence via null
-    const hasDoDate = updates.doDate && updates.doDate.length > 0
-    const hasDueDate = updates.dueDate && updates.dueDate.length > 0
-    if (!hasDoDate && !hasDueDate) {
-      // Check if task already has dates
-      const board = readBoard()
-      const existingTask = board.tasks.find(t => t.id === id)
-      if (existingTask) {
-        const taskHasDoDate = existingTask.doDate && existingTask.doDate.length > 0
-        const taskHasDueDate = existingTask.dueDate && existingTask.dueDate.length > 0
-        if (!taskHasDoDate && !taskHasDueDate) {
-          res.status(400).json({ error: 'Recurring tasks must have at least a do date or due date.' })
-          return
-        }
-      } else {
-        res.status(400).json({ error: 'Recurring tasks must have at least a do date or due date.' })
-        return
-      }
-    }
-    if (updates.recurrence.kind === 'interval_days') {
-      if (!updates.recurrence.intervalDays || updates.recurrence.intervalDays < 1) {
-        res.status(400).json({ error: 'Interval must be at least 1 day.' })
-        return
-      }
-    }
-    if (updates.recurrence.kind === 'cron') {
-      if (!updates.recurrence.cronExpr) {
-        res.status(400).json({ error: 'Invalid recurrence rule.' })
-        return
-      }
-      try {
-        cronParser.parseExpression(updates.recurrence.cronExpr, { currentDate: new Date() })
-      } catch {
-        res.status(400).json({ error: 'Invalid recurrence rule.' })
-        return
-      }
-    }
+  const board = readBoard()
+  const existingTask = board.tasks.find(t => t.id === id) ?? undefined
+  const patchValidationError = validateRecurrenceInput(
+    updates.recurrence,
+    updates.doDate,
+    updates.dueDate,
+    existingTask
+  )
+  if (patchValidationError) {
+    res.status(400).json({ error: patchValidationError })
+    return
   }
 
   // If changing columnId, verify it exists
