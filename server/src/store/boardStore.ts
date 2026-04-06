@@ -439,7 +439,7 @@ export function reorderTasks(taskId: string, targetColumnId: string, newIndex: n
   if (isSameColumn) {
     // Same-column reorder
     const colTasks = getTasksInColumn(sourceColumnId, taskId)
-    const prevOrder = newIndex > 0 ? colTasks[newIndex - 1].order : -Infinity
+    const prevOrder = newIndex > 0 ? colTasks[Math.min(newIndex - 1, colTasks.length - 1)].order : -Infinity
     const nextOrder = newIndex < colTasks.length ? colTasks[newIndex].order : Infinity
     const midpoint = (prevOrder + nextOrder) / 2
 
