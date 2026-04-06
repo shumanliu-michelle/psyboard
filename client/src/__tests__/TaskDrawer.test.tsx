@@ -152,14 +152,6 @@ describe('TaskDrawer — recurrence fields', () => {
     expect(screen.getByLabelText(/every/i)).toBeInTheDocument()
   })
 
-  it('shows cron input when Advanced is selected', async () => {
-    const user = userEvent.setup()
-    render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)
-    const select = screen.getByRole('combobox', { name: /repeat/i })
-    await user.selectOptions(select, 'cron')
-    expect(screen.getByLabelText(/cron/i)).toBeInTheDocument()
-  })
-
   it('shows mode toggle when recurrence is set', async () => {
     const user = userEvent.setup()
     render(<TaskDrawer mode="create" columnId="col-backlog" onClose={() => {}} onSaved={() => {}} />)

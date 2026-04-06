@@ -325,7 +325,6 @@ export function TaskDrawer({
               <option value="monthly">Monthly</option>
               <option value="interval_days">Every X days</option>
               <option value="weekdays">Weekdays only</option>
-              <option value="cron">Advanced (cron)</option>
             </select>
           </div>
 
