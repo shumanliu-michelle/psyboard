@@ -9,8 +9,8 @@ const DEFAULT_POLL_INTERVAL_MINUTES = 5
 // entityId → interval timer id
 const activeTimers = new Map<string, ReturnType<typeof setInterval>>()
 
-function getPollIntervalMinutes(entityId: string, alertPollMinutes: number | undefined): number {
-  return alertPollMinutes ?? DEFAULT_POLL_INTERVAL_MINUTES
+function getPollIntervalMinutes(alertPollMinutes: number | undefined, globalPollMinutes: number): number {
+  return alertPollMinutes ?? globalPollMinutes
 }
 
 async function checkSingleAlert(entityId: string, pollMinutes: number): Promise<void> {
@@ -55,7 +55,7 @@ export function startScheduler(): void {
   const defaultInterval = config.pollIntervalMinutes ?? DEFAULT_POLL_INTERVAL_MINUTES
 
   for (const alert of config.alerts) {
-    const intervalMs = getPollIntervalMinutes(alert.entityId, alert.pollIntervalMinutes) * 60 * 1000
+    const intervalMs = getPollIntervalMinutes(alert.pollIntervalMinutes, defaultInterval) * 60 * 1000
     console.log(`[HA Scheduler] Scheduling ${alert.entityId} every ${intervalMs / 60000} min`)
 
     // Fire immediately on start
