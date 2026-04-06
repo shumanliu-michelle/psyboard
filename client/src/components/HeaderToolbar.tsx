@@ -1,6 +1,5 @@
 import { useRef } from 'react'
 import { useFilterContext } from '../context/FilterContext'
-import { useTheme } from '../hooks/useTheme'
 
 type SseStatus = 'connected' | 'connecting' | 'disconnected'
 
@@ -15,7 +14,6 @@ export function HeaderToolbar({ sseStatus }: HeaderToolbarProps) {
     assigneeFilter, toggleAssignee,
     matchingCount,
   } = useFilterContext()
-  const { theme, toggleTheme } = useTheme()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const isSearchOpen = expanded === 'search'
@@ -59,9 +57,6 @@ export function HeaderToolbar({ sseStatus }: HeaderToolbarProps) {
     }
   }
 
-  // Determine dark mode icon: 🌕 when in dark mode (click to go light), 🌑 when in light mode (click to go dark)
-  const darkModeIcon = theme === 'dark' ? '🌕' : '🌑'
-
   return (
     <div
       className="header-toolbar"
@@ -87,14 +82,6 @@ export function HeaderToolbar({ sseStatus }: HeaderToolbarProps) {
             title="Filter"
           >
             👤
-          </button>
-          <button
-            className="toolbar-btn"
-            onClick={toggleTheme}
-            aria-label="Toggle dark mode"
-            title="Toggle dark mode"
-          >
-            {darkModeIcon}
           </button>
           <button
             className="toolbar-btn"
