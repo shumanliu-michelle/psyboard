@@ -417,6 +417,9 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
+# Home Assistant config (contains credentials)
+server/config/ha/
+
 # psyboard — generated data
 server/data/board.json
 server/data/*.tmp
