@@ -1,26 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { reorderTasks, readBoard, writeBoard } from '../store/boardStore.js'
 import { randomUUID } from 'crypto'
+import { setupTestBoard, createTestBoard } from './testBoard.js'
 
-// Helper to create a minimal board for testing
-function createTestBoard() {
-  const backlogId = 'col-backlog'
-  const todayId = 'col-today'
-  const doneId = 'col-done'
-  return {
-    columns: [
-      { id: backlogId, title: 'Backlog', kind: 'system' as const, systemKey: 'backlog' as const, position: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: todayId, title: 'Today', kind: 'system' as const, systemKey: 'today' as const, position: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: doneId, title: 'Done', kind: 'system' as const, systemKey: 'done' as const, position: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ],
-    tasks: [],
-  }
-}
+setupTestBoard()
 
 describe('reorderTasks', () => {
   beforeEach(() => {
-    const board = createTestBoard()
-    writeBoard(board)
+    writeBoard(createTestBoard())
   })
 
   it('should throw if task not found', () => {

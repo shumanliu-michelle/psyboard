@@ -6,18 +6,13 @@ import { writeBoard } from '../store/boardStore.js'
 import type { Board } from '../types.js'
 import { computeNextDate } from '../store/recurrence.js'
 import type { RecurrenceConfig } from '../types.js'
+import { setupTestBoard, createTestBoard } from './testBoard.js'
+
+setupTestBoard()
 
 describe('PATCH /api/tasks/:id — completedAt behavior', () => {
   beforeEach(() => {
-    const board: Board = {
-      columns: [
-        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
-        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
-        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
-      ],
-      tasks: [],
-    }
-    writeBoard(board)
+    writeBoard(createTestBoard())
   })
 
   async function createTask(title: string, columnId: string) {
@@ -58,15 +53,7 @@ describe('PATCH /api/tasks/:id — completedAt behavior', () => {
 
 describe('POST /api/tasks — date validation', () => {
   beforeEach(() => {
-    const board: Board = {
-      columns: [
-        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
-        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
-        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
-      ],
-      tasks: [],
-    }
-    writeBoard(board)
+    writeBoard(createTestBoard())
   })
 
   it('returns 400 when dueDate is before doDate', async () => {
@@ -101,15 +88,7 @@ describe('POST /api/tasks — date validation', () => {
 
 describe('PATCH /api/tasks/:id — date validation', () => {
   beforeEach(() => {
-    const board: Board = {
-      columns: [
-        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
-        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
-        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
-      ],
-      tasks: [],
-    }
-    writeBoard(board)
+    writeBoard(createTestBoard())
   })
 
   async function createTask(title: string, columnId: string) {
@@ -182,15 +161,7 @@ describe('computeNextDate', () => {
 
 describe('POST /api/tasks — recurrence validation', () => {
   beforeEach(() => {
-    const board: Board = {
-      columns: [
-        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
-        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
-        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
-      ],
-      tasks: [],
-    }
-    writeBoard(board)
+    writeBoard(createTestBoard())
   })
 
   it('returns 400 when recurrence set but no doDate or dueDate', async () => {
@@ -255,15 +226,7 @@ describe('POST /api/tasks — recurrence validation', () => {
 
 describe('PATCH /api/tasks/:id — recurrence validation', () => {
   beforeEach(() => {
-    const board: Board = {
-      columns: [
-        { id: BACKLOG_COLUMN_ID, title: 'Backlog', kind: 'system', systemKey: 'backlog', position: 0, createdAt: '', updatedAt: '' },
-        { id: TODAY_COLUMN_ID, title: 'Today', kind: 'system', systemKey: 'today', position: 1, createdAt: '', updatedAt: '' },
-        { id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done', position: 2, createdAt: '', updatedAt: '' },
-      ],
-      tasks: [],
-    }
-    writeBoard(board)
+    writeBoard(createTestBoard())
   })
 
   async function createTask(title: string, columnId: string) {
@@ -303,6 +266,68 @@ describe('PATCH /api/tasks/:id — recurrence validation', () => {
   })
 })
 
+describe('PATCH /api/tasks/:id — clearing assignee and priority', () => {
+  beforeEach(() => {
+    writeBoard(createTestBoard())
+  })
+
+  it('can clear assignee by setting it to null', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'Task', columnId: BACKLOG_COLUMN_ID, assignee: 'SL' })
+    expect(res.status).toBe(201)
+    expect(res.body.assignee).toBe('SL')
+
+    const patchRes = await request(app)
+      .patch(`/api/tasks/${res.body.id}`)
+      .send({ assignee: null })
+    expect(patchRes.status).toBe(200)
+    expect(patchRes.body.assignee).toBeUndefined()
+  })
+
+  it('can clear priority by setting it to null', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'Task', columnId: BACKLOG_COLUMN_ID, priority: 'high' })
+    expect(res.status).toBe(201)
+    expect(res.body.priority).toBe('high')
+
+    const patchRes = await request(app)
+      .patch(`/api/tasks/${res.body.id}`)
+      .send({ priority: null })
+    expect(patchRes.status).toBe(200)
+    expect(patchRes.body.priority).toBeUndefined()
+  })
+
+  it('can set assignee from null to a value', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'Task', columnId: BACKLOG_COLUMN_ID })
+    expect(res.status).toBe(201)
+    expect(res.body.assignee).toBeUndefined()
+
+    const patchRes = await request(app)
+      .patch(`/api/tasks/${res.body.id}`)
+      .send({ assignee: 'KL' })
+    expect(patchRes.status).toBe(200)
+    expect(patchRes.body.assignee).toBe('KL')
+  })
+
+  it('can set priority from null to a value', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'Task', columnId: BACKLOG_COLUMN_ID })
+    expect(res.status).toBe(201)
+    expect(res.body.priority).toBeUndefined()
+
+    const patchRes = await request(app)
+      .patch(`/api/tasks/${res.body.id}`)
+      .send({ priority: 'medium' })
+    expect(patchRes.status).toBe(200)
+    expect(patchRes.body.priority).toBe('medium')
+  })
+})
+
 describe('updateTask — recurring task completion', () => {
   beforeEach(() => {
     // Reset board to known state
@@ -334,8 +359,10 @@ describe('updateTask — recurring task completion', () => {
   })
 
   it('generates next occurrence when recurring task moved to Done', async () => {
+    // Use a future doDate so the next occurrence's date is also in the future
+    // and won't be promoted to Today by reconcileTask
     const task = await createTask('Daily Task', BACKLOG_COLUMN_ID, {
-      doDate: '2026-04-05',
+      doDate: '2026-12-31',
       recurrence: { kind: 'daily', mode: 'fixed' },
     })
     expect(task.id).toBeDefined()
@@ -350,7 +377,7 @@ describe('updateTask — recurring task completion', () => {
     const nextTasks = boardRes.body.tasks.filter((t: { previousOccurrenceId?: string }) => t.previousOccurrenceId === task.id)
     expect(nextTasks).toHaveLength(1)
     expect(nextTasks[0].title).toBe('Daily Task')
-    expect(nextTasks[0].doDate).toBe('2026-04-06')
+    expect(nextTasks[0].doDate).toBe('2027-01-01')
     expect(nextTasks[0].columnId).toBe(BACKLOG_COLUMN_ID)
     expect(nextTasks[0].recurrenceRootId).toBe(task.id)
   })

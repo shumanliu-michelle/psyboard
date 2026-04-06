@@ -11,7 +11,24 @@ const ORDER_GAP_THRESHOLD = 0.001
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, '..', '..', 'data')
-const BOARD_FILE = path.join(DATA_DIR, 'board.json')
+const DEFAULT_BOARD_FILE = path.join(DATA_DIR, 'board.json')
+
+// Configurable board path — allows tests to use isolated boards
+let _boardFile: string | null = null
+
+export function setBoardPath(filePath: string): void {
+  _boardFile = filePath
+}
+
+export function resetBoardPath(): void {
+  _boardFile = null
+}
+
+function getBoardFile(): string {
+  if (_boardFile !== null) return _boardFile
+  if (process.env.BOARD_PATH) return process.env.BOARD_PATH
+  return DEFAULT_BOARD_FILE
+}
 
 // Old column format had 'order' instead of 'position'
 type LegacyColumn = Omit<Column, 'position' | 'kind' | 'systemKey' | 'createdAt' | 'updatedAt'> & {
@@ -42,19 +59,21 @@ const DEFAULT_BOARD: Board = {
 }
 
 function ensureDataDir(): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true })
+  const dir = path.dirname(getBoardFile())
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
   }
 }
 
 export function readBoard(): Board {
   ensureDataDir()
-  if (!fs.existsSync(BOARD_FILE)) {
+  const boardFile = getBoardFile()
+  if (!fs.existsSync(boardFile)) {
     writeBoard(DEFAULT_BOARD)
     return DEFAULT_BOARD
   }
   try {
-    const raw = fs.readFileSync(BOARD_FILE, 'utf-8')
+    const raw = fs.readFileSync(boardFile, 'utf-8')
     const board = JSON.parse(raw) as Board
     const healed = migrateAndHeal(board)
     return healed
@@ -122,9 +141,10 @@ function migrateAndHeal(board: Board): Board {
 export function writeBoard(board: Board): void {
   ensureDataDir()
   // Atomic write: write to temp file, then rename
-  const tmp = BOARD_FILE + '.tmp'
+  const boardFile = getBoardFile()
+  const tmp = boardFile + '.tmp'
   fs.writeFileSync(tmp, JSON.stringify(board, null, 2), 'utf-8')
-  fs.renameSync(tmp, BOARD_FILE)
+  fs.renameSync(tmp, boardFile)
 }
 
 // Column operations
@@ -278,7 +298,7 @@ export function updateTask(id: string, updates: {
   assignee?: 'SL' | 'KL' | null
   doDate?: string | null
   dueDate?: string | null
-  priority?: 'low' | 'medium' | 'high'
+  priority?: 'low' | 'medium' | 'high' | null
   completedAt?: string
   recurrence?: { kind: string; mode: string; intervalDays?: number; cronExpr?: string; daysOfWeek?: number[]; dayOfMonth?: number; timezone?: string } | null
   suppressNextOccurrence?: boolean
