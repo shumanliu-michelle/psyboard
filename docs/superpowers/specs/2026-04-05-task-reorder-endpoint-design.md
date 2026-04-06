@@ -97,32 +97,45 @@ Reorder a task within or across columns. The server computes new `order` values 
 
 ### `reorderTasks(taskId: string, targetColumnId: string, newIndex: number): Task[]`
 
-In `boardStore.ts`:
+Uses fractional orders to minimize writes. Only the moved task is updated unless the gap between adjacent orders is too small, in which case a full column renumber occurs.
 
+**Gap threshold:** `0.001` — if the midpoint between two tasks would be closer than this to either neighbor, trigger renumber.
+
+**Same-column reorder:**
 1. Read the board
-2. Find the task being moved — throw if not found
-3. Determine source column (from the task's current `columnId`)
-4. Get tasks in source column, sorted by `order` — call this `sourceTasks`
-5. Get tasks in target column, sorted by `order` — call this `targetTasks`
-6. Remove the moved task from source column
-
-   **If source column === target column (same-column reorder):**
-   - The removed task is still in memory (not yet removed from array)
-   - Insert it at `newIndex` in `targetTasks`
-   - Assign `order = index` to every task in `targetTasks`
+2. Find the moved task — throw if not found
+3. Get tasks in the column, sorted by `order` (excluding the moved task)
+4. Determine the orders of the tasks that will surround the insertion point:
+   - `prevOrder` = `order` of task at `newIndex - 1` (or `-Infinity` if inserting at start)
+   - `nextOrder` = `order` of task at `newIndex` (or `+Infinity` if inserting at end)
+5. Compute `midpoint = (prevOrder + nextOrder) / 2`
+6. If `midpoint - prevOrder < GAP_THRESHOLD` or `nextOrder - midpoint < GAP_THRESHOLD`:
+   - **Renumber:** set `order = index` for all tasks in column (0, 1, 2, ...)
    - Update `task.updatedAt` for all
+7. Otherwise:
+   - Set `task.order = midpoint`
+   - Update `task.updatedAt` only for the moved task
+8. Write the board
+9. Return affected tasks
 
-   **If source column ≠ target column (cross-column move):**
-   - Append moved task to end of `targetTasks`
-   - Assign `order = index` to every task in `targetTasks`
-   - For source column: re-assign `order = index` to remaining source tasks
-   - Update `task.updatedAt` for all
-   - Set `task.columnId = targetColumnId`
-   - Set `task.order = newIndex` (already set by step above)
-   - Auto-set `completedAt` when moving into Done, clear when moving out (already handled by `updateTask` logic, but this is a direct write so we replicate that behavior)
-
-7. Write the board
-8. Return all affected tasks
+**Cross-column move:**
+1. Read the board
+2. Find the moved task — throw if not found
+3. Get tasks in source column (excluding moved task), sorted by `order`
+4. Get tasks in target column, sorted by `order`
+5. Determine surrounding orders in target column at `newIndex` (same logic as above)
+6. Compute midpoint and check threshold
+7. If renumber needed:
+   - Renumber source column (all remaining tasks): `order = index`
+   - Renumber target column (all tasks including moved): `order = index`
+8. Otherwise:
+   - Set `task.order = midpoint`
+   - Renumber only source column: `order = index` (moved task removed, orders shift)
+   - Update `task.updatedAt` for moved task and source column tasks
+9. Set `task.columnId = targetColumnId`
+10. Auto-set `completedAt` when moving into Done; clear when moving out
+11. Write the board
+12. Return all affected tasks (source column remaining + target column all)
 
 ## API Layer
 
@@ -233,8 +246,9 @@ Existing tasks with `manualOrder` values: when read from storage, `manualOrder` 
 
 ## Testing
 
-1. **Same-column reorder** — drag task A from position 2 to position 0 in Today column; all task orders should update
-2. **Cross-column move** — drag task from Today to custom column; orders update in both columns
-3. **New task appends** — create new task in Today; it gets `order = tasksInColumn.length`
-4. **Backlog/Done unaffected** — reordering in Backlog/Done still uses auto-sort (doDate/dueDate/completedAt), not `order`
-5. **Migration** — existing tasks with `manualOrder` load and display correctly using `order`
+1. **Same-column reorder (fractional)** — move task in Today column; only 1 task's order updated (the moved task), using midpoint
+2. **Same-column renumber trigger** — after many fractional moves, gap threshold is hit; entire column renumbered to clean integers
+3. **Cross-column move** — move task from Today to custom column; source column renumbered, target uses fractional insert
+4. **New task appends** — create new task in Today; it gets `order = tasksInColumn.length`
+5. **Backlog/Done unaffected** — reordering in Backlog/Done still uses auto-sort (doDate/dueDate/completedAt), not `order`
+6. **Migration** — existing tasks with `manualOrder` load and display correctly using `order`
