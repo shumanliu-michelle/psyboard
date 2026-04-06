@@ -35,6 +35,13 @@ async function checkSingleAlert(entityId: string, pollMinutes: number): Promise<
     const created = results.filter(r => r.action === 'created').map(r => r.alert.taskTitle)
     const skipped = results.filter(r => r.action === 'skipped').map(r => r.alert.taskTitle)
 
+    if (created.length > 0) {
+      console.log(`[HA Scheduler] Created: ${created.join(', ')}`)
+    }
+    if (skipped.length > 0) {
+      console.log(`[HA Scheduler] Skipped: ${skipped.join(', ')}`)
+    }
+
     if (created.length > 0 || skipped.length > 0) {
       const summary: BroadcastSummary = { source: 'home_assistant', created, skipped }
       broadcast(undefined, summary)

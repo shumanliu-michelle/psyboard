@@ -39,6 +39,13 @@ router.post('/check', async (_req, res) => {
   const created = results.filter(r => r.action === 'created').map(r => r.alert.taskTitle)
   const skipped = results.filter(r => r.action === 'skipped').map(r => r.alert.taskTitle)
 
+  if (created.length > 0) {
+    console.log(`[HA] Created: ${created.join(', ')}`)
+  }
+  if (skipped.length > 0) {
+    console.log(`[HA] Skipped: ${skipped.join(', ')}`)
+  }
+
   // Broadcast board update with structured summary so clients can show a toast
   const summary: BroadcastSummary = { source: 'home_assistant', created, skipped }
   broadcast(undefined, summary)
