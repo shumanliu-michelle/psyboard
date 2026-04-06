@@ -41,7 +41,9 @@ export function TaskDrawer({
     mode === 'edit' && task ? task.assignee : undefined
   )
   const [recurrence, setRecurrence] = useState<RecurrenceConfig | undefined>(() =>
-    mode === 'edit' && task ? task.recurrence : undefined
+    mode === 'edit' && task && task.recurrence
+      ? { ...task.recurrence, mode: task.recurrence.mode ?? 'fixed' }
+      : undefined
   )
   const [recurrenceError, setRecurrenceError] = useState('')
   const [dateError, setDateError] = useState('')
