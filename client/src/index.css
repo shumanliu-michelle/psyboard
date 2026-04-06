@@ -863,7 +863,7 @@ button.filter-chip[data-assignee="none"].selected {
 
 /* Dimmed state (search/filter) */
 .task-card.dimmed {
-  opacity: 0.3;
+  opacity: 0.1;
 }
 
 /* Dark mode priority and overdue overrides */

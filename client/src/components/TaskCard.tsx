@@ -143,7 +143,6 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         background: isOverdue ? '#fee2e2' : priorityBg,
         cursor: 'grab',
         touchAction: 'none',
-        opacity: dimmed ? 0.3 : 1,
       }}
       className={`task-card${isDragging ? ' dragging' : ''}${isCompleted ? ' done' : ''}${dimmed ? ' dimmed' : ''}${isOverdue ? ' overdue' : ''}${task.priority ? ` priority-${task.priority}` : ''}`}
       {...attributes}

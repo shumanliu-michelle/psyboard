@@ -45,6 +45,38 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
     return () => document.removeEventListener('mousedown', handler)
   }, [showMenu])
 
+  // ---- Done column pagination ----
+  const [donePage, setDonePage] = useState(0)  // number of 7-day pages loaded
+
+  const DONE_PAGE_DAYS = 7
+
+  function getCompletedAtDaysAgo(completedAt: string): number {
+    const completed = new Date(completedAt)
+    const today = new Date()
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const completedMidnight = new Date(completed.getFullYear(), completed.getMonth(), completed.getDate())
+    return Math.round((todayMidnight.getTime() - completedMidnight.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  const isDoneColumn = column.systemKey === 'done'
+
+  // All done tasks sorted by completedAt desc (most recent first)
+  const allDoneTasks = isDoneColumn
+    ? tasks
+        .filter(t => t.completedAt != null)
+        .sort((a, b) => (b.completedAt! > a.completedAt! ? 1 : -1))
+    : []
+
+  // Tasks visible on current page (0 = last 7 days, 1 = last 14 days, etc.)
+  const visibleDoneTasks = isDoneColumn
+    ? allDoneTasks.filter(t => getCompletedAtDaysAgo(t.completedAt!) < (donePage + 1) * DONE_PAGE_DAYS)
+    : []
+
+  // Older done tasks not yet visible
+  const olderDoneTasksCount = isDoneColumn ? Math.max(0, allDoneTasks.length - visibleDoneTasks.length) : 0
+
+  const renderedTasks = isDoneColumn ? visibleDoneTasks : tasks
+
   const systemColors = column.kind === 'system'
     ? getColumnColor(column.systemKey)
     : getColumnColor(undefined, column.accent)
@@ -199,8 +231,8 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
     )}
 
       <div ref={setDroppableRef} className="column-tasks">
-        <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          {tasks.map(task => (
+        <SortableContext items={renderedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+          {renderedTasks.map(task => (
             <TaskCard
               key={task.id}
               task={task}
@@ -211,6 +243,41 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
           ))}
         </SortableContext>
       </div>
+
+      {/* Done column pagination footer */}
+      {isDoneColumn && olderDoneTasksCount > 0 && (
+        <div style={{
+          padding: '10px 12px',
+          borderTop: '1px solid #e5e7eb',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>
+            Showing last {(donePage + 1) * DONE_PAGE_DAYS} days · {olderDoneTasksCount} older {olderDoneTasksCount === 1 ? 'task' : 'tasks'}
+          </div>
+          <button
+            type="button"
+            onClick={() => setDonePage(p => p + 1)}
+            style={{
+              background: 'none',
+              border: '1px solid #cbd5e1',
+              borderRadius: 6,
+              padding: '6px 14px',
+              fontSize: 12,
+              color: '#475569',
+              cursor: 'pointer',
+            }}
+          >
+            Show older tasks
+          </button>
+        </div>
+      )}
+
+      {/* Empty state: done column with no tasks */}
+      {isDoneColumn && tasks.length === 0 && (
+        <div style={{ padding: '24px 12px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+          No completed tasks yet
+        </div>
+      )}
 
       {column.systemKey !== 'done' && (
         <QuickAddForm
