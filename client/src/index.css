@@ -59,12 +59,7 @@ body {
   max-width: 320px;
   flex-shrink: 0;
   box-shadow: var(--shadow-card);
-  overflow: hidden;
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: flex;
-  flex-direction: column;
+  overflow: visible;
 }
 
 .column-header {
@@ -73,7 +68,6 @@ body {
   justify-content: space-between;
   align-items: center;
   overflow: visible;
-  flex-shrink: 0;
 }
 
 .column-header h3 {
@@ -96,8 +90,6 @@ body {
   flex-direction: column;
   gap: 8px;
   min-height: 100px;
-  flex: 1;
-  overflow-y: auto;
 }
 
 /* === Task Card === */
