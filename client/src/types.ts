@@ -34,8 +34,6 @@ export type Task = {
   priority?: TaskPriority
   assignee?: 'SL' | 'KL' | undefined  // undefined means not assigned
 
-  manualOrder?: number
-
   createdAt: string
   updatedAt: string
   completedAt?: string
@@ -66,5 +64,4 @@ export type UpdateTaskInput = {
   dueDate?: string | null
   priority?: TaskPriority | null
   completedAt?: string
-  manualOrder?: number
 }

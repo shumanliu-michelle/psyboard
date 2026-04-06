@@ -45,14 +45,8 @@ function sortTasksForColumn(tasks: Task[], _columnId: string, _columnKind: 'syst
       return b.completedAt.localeCompare(a.completedAt) // descending (most recent first)
     })
   }
-  // Today and custom columns — sort by manualOrder, then order as fallback
-  return [...tasks].sort((a, b) => {
-    if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
-      return a.manualOrder - b.manualOrder
-    } else if (a.manualOrder !== undefined) return -1
-    else if (b.manualOrder !== undefined) return 1
-    return a.order - b.order
-  })
+  // Today and custom columns — sort by order
+  return [...tasks].sort((a, b) => a.order - b.order)
 }
 
 interface BoardViewProps {
@@ -159,15 +153,11 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
         }
         // Move to new column
         const targetColumn = board.columns.find(c => c.id === targetColumnId)
-        const isSortableColumn = targetColumn && targetColumn.systemKey !== 'done' && targetColumn.systemKey !== 'backlog'
-        if (isSortableColumn) {
-          // Put at top of target column by assigning manualOrder less than current first task
+        if (targetColumn && targetColumn.systemKey !== 'done' && targetColumn.systemKey !== 'backlog') {
           const targetTasks = board.tasks
             .filter(t => t.columnId === targetColumnId)
-            .sort((a, b) => (a.manualOrder ?? a.order) - (b.manualOrder ?? b.order))
-          const firstOrder = targetTasks.length > 0 ? (targetTasks[0].manualOrder ?? targetTasks[0].order) : 0
-          const newOrderVal = firstOrder / 2
-          api.updateTask(taskId, { columnId: targetColumnId, manualOrder: newOrderVal }).then(onRefresh).catch(console.error)
+            .sort((a, b) => a.order - b.order)
+          api.reorderTasks(taskId, targetColumnId, targetTasks.length).then(onRefresh).catch(console.error)
         } else {
           api.updateTask(taskId, { columnId: targetColumnId }).then(onRefresh).catch(console.error)
         }
@@ -177,39 +167,17 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
 
     // Same-column reordering: dropped on another task
     if (overTask && overTask.columnId === task.columnId) {
-      const column = board.columns.find(c => c.id === task.columnId)
-      if (column && column.systemKey !== 'done' && column.systemKey !== 'backlog') {
-        const colTasks = board.tasks
-          .filter(t => t.columnId === task.columnId)
-          .sort((a, b) => (a.manualOrder ?? a.order) - (b.manualOrder ?? b.order))
+      const colTasks = board.tasks
+        .filter(t => t.columnId === task.columnId)
+        .sort((a, b) => a.order - b.order)
 
-        const oldIndex = colTasks.findIndex(t => t.id === taskId)
-        const newIndex = colTasks.findIndex(t => t.id === over.id)
+      const oldIndex = colTasks.findIndex(t => t.id === taskId)
+      const newIndex = colTasks.findIndex(t => t.id === over.id)
 
-        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          // Calculate new manualOrder based on adjacent tasks at the target position
-          // Tasks use manualOrder (ascending), lower values appear first
-          let newOrderVal: number
-          if (newIndex === 0) {
-            // Moving to first position — use half of current first task's order, or -1 if none
-            const firstOrder = colTasks.length > 0 ? (colTasks[0].manualOrder ?? colTasks[0].order) : 0
-            newOrderVal = firstOrder / 2
-          } else if (newIndex >= colTasks.length - 1) {
-            // Moving to last position — use current last + 1 (or 1 if none)
-            const last = colTasks[colTasks.length - 1]
-            newOrderVal = colTasks.length > 0 ? (last.manualOrder ?? last.order) + 1 : 0
-          } else {
-            // Moving between two tasks — average of neighbors
-            const before = colTasks[newIndex - 1]
-            const after = colTasks[newIndex]
-            const beforeOrder = before.manualOrder ?? before.order
-            const afterOrder = after.manualOrder ?? after.order
-            newOrderVal = (beforeOrder + afterOrder) / 2
-          }
-          console.log('[reorder]', { taskId, oldIndex, newIndex, newOrderVal })
-          api.updateTask(taskId, { manualOrder: newOrderVal }).then(onRefresh).catch(console.error)
-        }
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        api.reorderTasks(taskId, task.columnId, newIndex).then(onRefresh).catch(console.error)
       }
+      return
     }
   }
 

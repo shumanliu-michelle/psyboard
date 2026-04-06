@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createTask, updateTask, deleteTask, readBoard } from '../store/boardStore.js'
+import { createTask, updateTask, deleteTask, readBoard, reorderTasks } from '../store/boardStore.js'
 import type { CreateTaskInput, UpdateTaskInput } from '../types.js'
 
 const router = Router()
@@ -125,6 +125,38 @@ router.delete('/:id', (req, res) => {
     res.status(204).send()
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete task' })
+  }
+})
+
+router.post('/reorder', (req, res) => {
+  const { taskId, targetColumnId, newIndex } = req.body as {
+    taskId?: string
+    targetColumnId?: string
+    newIndex?: number
+  }
+
+  if (!taskId || typeof taskId !== 'string' || taskId.length < 10) {
+    res.status(400).json({ error: 'Invalid taskId' })
+    return
+  }
+  if (!targetColumnId || typeof targetColumnId !== 'string') {
+    res.status(400).json({ error: 'Invalid targetColumnId' })
+    return
+  }
+  if (typeof newIndex !== 'number' || newIndex < 0 || !Number.isInteger(newIndex)) {
+    res.status(400).json({ error: 'newIndex must be a non-negative integer' })
+    return
+  }
+
+  try {
+    const tasks = reorderTasks(taskId, targetColumnId, newIndex)
+    res.json({ tasks })
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes('not found')) {
+      res.status(404).json({ error: err.message })
+      return
+    }
+    res.status(500).json({ error: 'Failed to reorder tasks' })
   }
 })
 

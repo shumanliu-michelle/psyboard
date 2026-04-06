@@ -66,5 +66,4 @@ export type UpdateTaskInput = {
   dueDate?: string | null
   priority?: TaskPriority | null
   completedAt?: string
-  manualOrder?: number
 }
