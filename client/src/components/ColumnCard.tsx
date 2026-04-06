@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
-import type { Column, Task } from '../types'
+import type { Column, Task, DONE_COLUMN_ID } from '../types'
 import { TaskCard, KebabIcon } from './TaskCard'
 import { getColumnColor } from '../styles/columnColors'
 
@@ -44,6 +44,36 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showMenu])
+
+  // ---- Done column pagination ----
+  const [donePage, setDonePage] = useState(0)  // number of 7-day pages loaded
+
+  const DONE_PAGE_DAYS = 7
+
+  function getCompletedAtDaysAgo(completedAt: string): number {
+    const completed = new Date(completedAt)
+    const today = new Date()
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const completedMidnight = new Date(completed.getFullYear(), completed.getMonth(), completed.getDate())
+    return Math.round((todayMidnight.getTime() - completedMidnight.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  const isDoneColumn = column.systemKey === 'done'
+
+  // All done tasks sorted by completedAt desc (most recent first)
+  const allDoneTasks = isDoneColumn
+    ? tasks
+        .filter(t => t.completedAt != null)
+        .sort((a, b) => (b.completedAt! > a.completedAt! ? 1 : -1))
+    : []
+
+  // Tasks visible on current page (0 = last 7 days, 1 = last 14 days, etc.)
+  const visibleDoneTasks = isDoneColumn
+    ? allDoneTasks.filter(t => getCompletedAtDaysAgo(t.completedAt!) < (donePage + 1) * DONE_PAGE_DAYS)
+    : []
+
+  // Older done tasks not yet visible
+  const olderDoneTasksCount = isDoneColumn ? Math.max(0, allDoneTasks.length - visibleDoneTasks.length) : 0
 
   const systemColors = column.kind === 'system'
     ? getColumnColor(column.systemKey)
