@@ -140,6 +140,22 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+/* Done state */
+.task-card.done {
+  background: #f9fafb;
+  opacity: 0.7;
+  border-color: #e5e7eb;
+}
+
+.task-card.done .task-card-title {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.task-card.done .task-description {
+  color: #9ca3af;
+}
+
 /* DragOverlay */
 [data-dnd-drag-overlay] {
   user-select: none;

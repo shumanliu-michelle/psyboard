@@ -119,7 +119,7 @@ export function TaskCard({ task, onUpdated, onDeleted, onOpenEdit }: TaskCardPro
         cursor: 'grab',
         touchAction: 'none',
       }}
-      className={`task-card${isDragging ? ' dragging' : ''}`}
+      className={`task-card${isDragging ? ' dragging' : ''}${isCompleted ? ' done' : ''}`}
       {...attributes}
       {...listeners}
       onClick={() => !isDragging && onOpenEdit()}
