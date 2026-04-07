@@ -12,9 +12,9 @@
 
 ## Section 1: psyboard API Changes
 
-### 1.0 `GET /api/ha/sensors` — HA live sensor data
+### 1.0 `GET /api/ha/sensors` — HA live sensor data (on-demand only)
 
-Returns live sensor readings from Home Assistant. psyduck uses this for morning/evening reminders instead of calling HA directly.
+Returns live sensor readings from Home Assistant. psyduck uses this **only when the user directly asks** about a specific HA device (e.g. "how full is the litter robot?", "any vacuum alerts?"). For scheduled reminders, HA alerts appear as psyboard tasks — queried via `psyboard_query`, not this endpoint.
 
 ```
 GET /api/ha/sensors
@@ -40,7 +40,7 @@ Response: {
 }
 ```
 
-All HA live data flows through psyboard. psyduck queries this endpoint only — no direct HA access.
+psyboard is the single integration point for HA. psyduck never calls HA directly — on-demand device queries go through `GET /api/ha/sensors`, and reminder-time alerts come through psyboard tasks created by psyboard's HA integration.
 
 ### 1.1 New `GET /api/schema` endpoint
 
