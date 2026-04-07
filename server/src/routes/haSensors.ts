@@ -47,7 +47,9 @@ router.get('/sensors', async (_req, res) => {
   let entities: HAEntity[]
   try {
     entities = await getAllStates({ url: env.HOME_ASSISTANT_URL, token: env.HOME_ASSISTANT_TOKEN })
+    console.log(`[HA] Fetched ${entities.length} entities from Home Assistant`)
   } catch (err) {
+    console.log(`[HA] Fetch failed: ${(err as Error).message}`)
     res.status(500).json({ error: (err as Error).message })
     return
   }
