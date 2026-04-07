@@ -2,9 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+// __dirname of backup.ts is server/src/ — go up two levels to project root, then into server/data
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-// Server runs from psyboard root via `npm run dev`, so process.cwd() = project root
-const DEFAULT_DATA_DIR = path.join(process.cwd(), 'server', 'data')
+const DEFAULT_DATA_DIR = path.join(__dirname, '..', '..', 'server', 'data')
 
 // Configurable data dir — mirrors boardStore path configuration
 let _dataDir: string | null = null
