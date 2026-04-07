@@ -11,6 +11,10 @@ function getTabId(req: express.Request): string | undefined {
   return req.headers['x-tab-id'] as string | undefined
 }
 
+function getSource(req: express.Request): 'tab' | 'psyduck' {
+  return req.headers['x-source'] === 'psyduck' ? 'psyduck' : 'tab'
+}
+
 function validateRecurrenceInput(
   recurrence: RecurrenceConfig | undefined | null,
   doDate?: string | null,
@@ -261,7 +265,7 @@ router.post('/', (req, res) => {
       assignee ?? undefined,
       recurrence
     )
-    const summary: BroadcastSummary = { source: 'tab', created: [task], updated: [], deleted: [] }
+    const summary: BroadcastSummary = { source: getSource(req), created: [task], updated: [], deleted: [] }
     res.status(201).json(task)
     broadcast(getTabId(req), summary)
   } catch (err) {
@@ -337,7 +341,7 @@ router.patch('/:id', (req, res) => {
       suppressNextOccurrence: updates.suppressNextOccurrence,
       expectedUpdatedAt: updates.expectedUpdatedAt,
     })
-    const summary: BroadcastSummary = { source: 'tab', created: [], updated: [task], deleted: [] }
+    const summary: BroadcastSummary = { source: getSource(req), created: [], updated: [task], deleted: [] }
     res.json(task)
     broadcast(getTabId(req), summary)
   } catch (err: unknown) {
@@ -372,7 +376,7 @@ router.delete('/:id', (req, res) => {
   try {
     const taskTitle = task.title
     deleteTask(id)
-    const summary: BroadcastSummary = { source: 'tab', created: [], updated: [], deleted: [taskTitle] }
+    const summary: BroadcastSummary = { source: getSource(req), created: [], updated: [], deleted: [taskTitle] }
     broadcast(getTabId(req), summary)
     res.status(204).send()
   } catch (err) {
@@ -403,7 +407,7 @@ router.post('/reorder', (req, res) => {
   try {
     const tasks = reorderTasks(taskId, targetColumnId, newIndex)
     const movedTask = tasks.find(t => t.id === taskId)
-    const summary: BroadcastSummary = { source: 'tab', created: [], updated: movedTask ? [movedTask] : [], deleted: [] }
+    const summary: BroadcastSummary = { source: getSource(req), created: [], updated: movedTask ? [movedTask] : [], deleted: [] }
     broadcast(getTabId(req), summary)
     res.json({ tasks })
   } catch (err: unknown) {

@@ -11,6 +11,7 @@ let clientIdCounter = 0
 export type BroadcastSummary =
   | { source: 'home_assistant'; created: string[]; skipped: string[] }
   | { source: 'tab'; created: Task[]; updated: Task[]; deleted: string[] }
+  | { source: 'psyduck'; created: Task[]; updated: Task[]; deleted: string[] }
   | null
 
 export function broadcast(sourceTabId?: string, summary?: BroadcastSummary): void {
