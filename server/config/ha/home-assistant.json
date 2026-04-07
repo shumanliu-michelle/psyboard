@@ -1,0 +1,82 @@
+{
+  "defaultColumn": "Today",
+  "pollIntervalMinutes": 5,
+  "alerts": [
+    {
+      "entityId": "sensor.absol_waste_drawer",
+      "condition": { "type": "numericAbove", "threshold": 80 },
+      "taskTitle": "Empty Absol's litter box",
+      "priority": "high"
+    },
+    {
+      "entityId": "sensor.absol_hopper_status",
+      "condition": { "type": "notEquals", "value": "enabled" },
+      "taskTitle": "Check Absol's hopper",
+      "priority": "medium"
+    },
+    {
+      "entityId": "sensor.absol_litter_level",
+      "condition": { "type": "numericBelow", "threshold": 80 },
+      "taskTitle": "Refill Absol's litter",
+      "priority": "high"
+    },
+    {
+      "entityId": "sensor.absol_status_code",
+      "condition": { "type": "notEquals", "value": "rdy" },
+      "taskTitle": "Check litter robot status",
+      "priority": "high"
+    },
+    {
+      "entityId": "sensor.front_doorbell_battery",
+      "condition": { "type": "numericBelow", "threshold": 10 },
+      "taskTitle": "Charge front doorbell battery",
+      "priority": "high"
+    },
+    {
+      "entityId": "binary_sensor.vz385114n_laundry_end_of_cycle",
+      "condition": { "type": "isOn" },
+      "taskTitle": "Washer done - move to dryer",
+      "priority": "medium"
+    },
+    {
+      "entityId": "binary_sensor.va101371g_laundry_end_of_cycle",
+      "condition": { "type": "isOn" },
+      "taskTitle": "Dryer done - fold clothes",
+      "priority": "medium"
+    },
+    {
+      "entityId": "sensor.s8_maxv_ultra_dock_dock_error",
+      "condition": {
+        "type": "stateToTitle",
+        "mapping": {
+          "ok": "",
+          "duct_blockage": "Check S8 dock for duct blockage",
+          "water_empty": "Refill S8 clean water tank",
+          "waste_water_tank_full": "Empty S8 dirty water tank",
+          "maintenance_brush_jammed": "Check S8 dock maintenance brush",
+          "dirty_tank_latch_open": "Check S8 dock dirty tank latch",
+          "no_dustbin": "Insert S8 dock dustbin",
+          "cleaning_tank_full_or_blocked": "Check S8 dock cleaning tank"
+        }
+      },
+      "priority": "high"
+    },
+    {
+      "entityId": "sensor.roborock_s7_maxv_dock_dock_error",
+      "condition": {
+        "type": "stateToTitle",
+        "mapping": {
+          "ok": "",
+          "duct_blockage": "Check S7 dock for duct blockage",
+          "water_empty": "Refill S7 clean water tank",
+          "waste_water_tank_full": "Empty S7 dirty water tank",
+          "maintenance_brush_jammed": "Check S7 dock maintenance brush",
+          "dirty_tank_latch_open": "Check S7 dock dirty tank latch",
+          "no_dustbin": "Insert S7 dock dustbin",
+          "cleaning_tank_full_or_blocked": "Check S7 dock cleaning tank"
+        }
+      },
+      "priority": "high"
+    }
+  ]
+}
