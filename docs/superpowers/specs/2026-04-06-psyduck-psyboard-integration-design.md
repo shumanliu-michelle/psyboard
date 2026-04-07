@@ -68,9 +68,6 @@ Returns the board schema psyduck needs to construct API calls:
   },
   "endpoints": {
     "getBoard": "GET /api/board",
-    "getSchema": "GET /api/schema",
-    "getHASensors": "GET /api/ha/sensors",
-    "getEvents": "GET /api/events (SSE stream)",
     "createColumn": "POST /api/columns { title, accent? }",
     "deleteColumn": "DELETE /api/columns/:id",
     "createTask": "POST /api/tasks { title, columnId, description?, doDate?, dueDate?, priority?, assignee?, recurrence? }",
@@ -132,10 +129,9 @@ Parameters:
   - priority (optional): "low" | "medium" | "high"
   - assignee (optional): "SL" | "KL"
   - recurrence (optional): recurrence rule object
-    - kind: "daily" | "weekly" | "monthly" | "interval_days" | "weekdays" | "cron"
+    - kind: "daily" | "weekly" | "monthly" | "interval_days" | "weekdays"
     - mode: "fixed" | "completion_based"
     - intervalDays (required if kind=interval_days): number
-    - cronExpr (required if kind=cron): cron expression
 ```
 
 ### Tool: `psyboard_update_task`
@@ -369,6 +365,48 @@ Additional custom columns can be created as needed via `POST /api/columns`.
 - **Slack message threading:** Should psyduck's board query responses thread off the original cron reminder, or post as new messages?
 - **One-off favor tasks:** If user says "can you ask Kejie to pick up milk", this isn't a psyboard task — it's a coordination ask. This stays in psyduck's conversational domain, not board.
 - **HA on-demand vs reminder scope:** `psyboard_ha_sensors` is for direct queries only. If you want HA alerts in morning/evening reminders, psyboard's HA integration should create tasks on the board when thresholds are breached, and those tasks appear via `psyboard_query`. Currently the spec reflects this design.
+
+---
+
+## Section 8: Home Assistant WebSocket Integration
+
+### Architecture Change: Polling → WebSocket Subscription
+
+Previously, psyboard polled HA every `pollIntervalMinutes` (default 5 min) via `setInterval` + `GET /api/states`. This has been replaced with a **persistent WebSocket connection** that receives real-time `state_changed` events directly from HA.
+
+**Why:**
+- **Immediate** — no 5-min delay when sensor thresholds are breached
+- **Efficient** — one persistent connection instead of repeated HTTP requests
+- **Complete** — catches every state change, not just snapshots at poll intervals
+
+**WebSocket Protocol Flow:**
+
+```
+1. Client connects to ws://<ha-host>/api/websocket
+2. HA sends:  { "type": "auth_required" }
+3. Client sends: { "type": "auth", "access_token": "<long-lived-token>" }
+4. HA sends:  { "type": "auth_success" }
+5. Client sends: { "type": "subscribe_events", "event_type": "state_changed" }
+6. HA streams state_changed events in real time
+```
+
+**For each `state_changed` event:**
+1. Filter to entities that have alert rules in `home-assistant.json`
+2. Evaluate the entity's new state against the alert condition
+3. If triggered, create a task via `createTasksForAlerts()` (idempotent — skips if open task with same title exists)
+4. Broadcast `board_updated` SSE event with `{ source: 'home_assistant', created: [...], skipped: [...] }`
+
+**Reconnection:** If the WebSocket disconnects (network issue, HA restart), the client reconnects with **exponential backoff** (1s → 2s → 4s → ... → 5 min cap). Calling `stopScheduler()` or `disconnect()` does an intentional disconnect that does NOT trigger reconnect.
+
+**Config changes:**
+- `pollIntervalMinutes` in `home-assistant.json` is **ignored** (WS mode has no polling interval)
+- The `home-assistant.json` alerts array and `defaultColumn` are still used
+- `HA .env` still requires `HOME_ASSISTANT_URL` and `HOME_ASSISTANT_TOKEN`
+
+**Files:**
+- `server/src/home-assistant/haWebSocket.ts` — WebSocket client (connect, auth, subscribe, event handling, reconnect)
+- `server/src/home-assistant/scheduler.ts` — Lifecycle manager (startScheduler/stopScheduler)
+- `server/src/home-assistant/__tests__/haWebSocket.test.ts` — Unit tests
 
 ---
 
