@@ -47,6 +47,8 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
 
   // ---- Done column pagination ----
   const [donePage, setDonePage] = useState(0)  // number of 7-day pages loaded
+  const [olderDoneTasks, setOlderDoneTasks] = useState<Task[]>([])
+  const [doneHasMore, setDoneHasMore] = useState(false)
 
   const DONE_PAGE_DAYS = 7
 
@@ -75,7 +77,30 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
   // Older done tasks not yet visible
   const olderDoneTasksCount = isDoneColumn ? Math.max(0, allDoneTasks.length - visibleDoneTasks.length) : 0
 
-  const renderedTasks = isDoneColumn ? visibleDoneTasks : tasks
+  const renderedTasks = isDoneColumn
+    ? donePage === 0
+      ? visibleDoneTasks
+      : olderDoneTasks
+    : tasks
+
+  async function handleLoadOlderDone() {
+    const oldestCompletedAt = allDoneTasks[allDoneTasks.length - 1]?.completedAt
+    if (!oldestCompletedAt) return
+    try {
+      const { tasks: olderTasks, hasMore } = await api.queryTasks({
+        columnId: 'col-done',
+        columnIdOp: 'eq',
+        completedAtOp: 'lt',
+        completedAt: oldestCompletedAt,
+        limit: 50,
+      })
+      setOlderDoneTasks(olderTasks)
+      setDoneHasMore(hasMore)
+      setDonePage(p => p + 1)
+    } catch {
+      // silently fail
+    }
+  }
 
   const systemColors = column.kind === 'system'
     ? getColumnColor(column.systemKey)
@@ -245,30 +270,34 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
       </div>
 
       {/* Done column pagination footer */}
-      {isDoneColumn && olderDoneTasksCount > 0 && (
+      {isDoneColumn && (donePage === 0 ? olderDoneTasksCount > 0 : olderDoneTasks.length > 0 || doneHasMore) && (
         <div style={{
           padding: '10px 12px',
           borderTop: '1px solid #e5e7eb',
           textAlign: 'center',
         }}>
           <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>
-            Showing last {(donePage + 1) * DONE_PAGE_DAYS} days · {olderDoneTasksCount} older {olderDoneTasksCount === 1 ? 'task' : 'tasks'}
+            {donePage === 0
+              ? `Showing last ${DONE_PAGE_DAYS} days · ${olderDoneTasksCount} older`
+              : `${olderDoneTasks.length} loaded · ${doneHasMore ? 'more available' : 'no older tasks'}`}
           </div>
-          <button
-            type="button"
-            onClick={() => setDonePage(p => p + 1)}
-            style={{
-              background: 'none',
-              border: '1px solid #cbd5e1',
-              borderRadius: 6,
-              padding: '6px 14px',
-              fontSize: 12,
-              color: '#475569',
-              cursor: 'pointer',
-            }}
-          >
-            Show older tasks
-          </button>
+          {donePage === 0 || doneHasMore ? (
+            <button
+              type="button"
+              onClick={handleLoadOlderDone}
+              style={{
+                background: 'none',
+                border: '1px solid #cbd5e1',
+                borderRadius: 6,
+                padding: '6px 14px',
+                fontSize: 12,
+                color: '#475569',
+                cursor: 'pointer',
+              }}
+            >
+              {donePage === 0 ? 'Show older tasks' : 'Show even older'}
+            </button>
+          ) : null}
         </div>
       )}
 

@@ -72,4 +72,49 @@ export const api = {
 
   backup: () =>
     request<{ backup: string }>('/backup', { method: 'POST' }),
+
+  queryTasks: (params: {
+    columnId?: string
+    columnIdOp?: 'eq' | 'ne'
+    completedAtOp?: 'lt' | 'gte'
+    completedAt?: string
+    dueDateOp?: 'eq' | 'gte' | 'lte' | 'lt'
+    dueDate?: string
+    doDateOp?: 'eq' | 'gte' | 'lt'
+    doDate?: string
+    priority?: string
+    assignee?: string
+    titleCont?: string
+    limit?: number
+    offset?: number
+    sortBy?: 'dueDate' | 'doDate' | 'completedAt' | 'order' | 'priority' | 'createdAt'
+    sortDir?: 'asc' | 'desc'
+  }) => {
+    const searchParams = new URLSearchParams()
+    if (params.columnId) {
+      const op = params.columnIdOp || 'eq'
+      searchParams.set(`columnId=${op}`, params.columnId)
+    }
+    if (params.completedAt) {
+      const op = params.completedAtOp || 'lt'
+      searchParams.set(`completedAt=${op}`, params.completedAt)
+    }
+    if (params.dueDate) {
+      const op = params.dueDateOp || 'eq'
+      searchParams.set(`dueDate=${op}`, params.dueDate)
+    }
+    if (params.doDate) {
+      const op = params.doDateOp || 'eq'
+      searchParams.set(`doDate=${op}`, params.doDate)
+    }
+    if (params.priority) searchParams.set('priority=eq', params.priority)
+    if (params.assignee) searchParams.set('assignee=eq', params.assignee)
+    if (params.titleCont) searchParams.set('title=cont', params.titleCont)
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit))
+    if (params.offset !== undefined) searchParams.set('offset', String(params.offset))
+    if (params.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params.sortDir) searchParams.set('sortDir', params.sortDir)
+
+    return request<{ tasks: Task[]; hasMore: boolean }>(`/tasks?${searchParams.toString()}`)
+  },
 }
