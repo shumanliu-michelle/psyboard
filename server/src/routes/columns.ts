@@ -129,7 +129,10 @@ router.post('/reorder', (req, res) => {
     const columns = reorderColumns(columnIds)
     res.json({ columns })
     broadcastSchemaUpdated()
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      // handle specific errors if needed
+    }
     res.status(500).json({ error: 'Failed to reorder columns' })
   }
 })
