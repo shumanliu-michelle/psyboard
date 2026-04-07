@@ -84,4 +84,61 @@ describe('evaluateAlerts', () => {
     const triggered = evaluateAlerts(rules, map)
     expect(triggered).toHaveLength(2)
   })
+
+  it('triggers stateToTitle with correct title for mapped state', () => {
+    const dockErrorRule: AlertRule = {
+      entityId: 'sensor.s8_maxv_ultra_dock_dock_error',
+      condition: {
+        type: 'stateToTitle',
+        mapping: {
+          'ok': '',
+          'water_empty': 'Refill S8 clean water tank',
+          'waste_water_tank_full': 'Empty S8 dirty water tank',
+          'duct_blockage': 'Check S8 dock for duct blockage',
+        },
+      },
+      priority: 'high',
+    }
+    const entities = [makeEntity('sensor.s8_maxv_ultra_dock_dock_error', 'water_empty')]
+    const map = new Map(entities.map(e => [e.entity_id, e]))
+    const triggered = evaluateAlerts([dockErrorRule], map)
+    expect(triggered).toHaveLength(1)
+    expect(triggered[0].taskTitle).toBe('Refill S8 clean water tank')
+  })
+
+  it('does not trigger stateToTitle when state is ok', () => {
+    const dockErrorRule: AlertRule = {
+      entityId: 'sensor.s8_maxv_ultra_dock_dock_error',
+      condition: {
+        type: 'stateToTitle',
+        mapping: {
+          'ok': '',
+          'water_empty': 'Refill S8 clean water tank',
+        },
+      },
+      priority: 'high',
+    }
+    const entities = [makeEntity('sensor.s8_maxv_ultra_dock_dock_error', 'ok')]
+    const map = new Map(entities.map(e => [e.entity_id, e]))
+    const triggered = evaluateAlerts([dockErrorRule], map)
+    expect(triggered).toHaveLength(0)
+  })
+
+  it('does not trigger stateToTitle for unmapped state', () => {
+    const dockErrorRule: AlertRule = {
+      entityId: 'sensor.s8_maxv_ultra_dock_dock_error',
+      condition: {
+        type: 'stateToTitle',
+        mapping: {
+          'ok': '',
+          'water_empty': 'Refill S8 clean water tank',
+        },
+      },
+      priority: 'high',
+    }
+    const entities = [makeEntity('sensor.s8_maxv_ultra_dock_dock_error', 'unknown_error')]
+    const map = new Map(entities.map(e => [e.entity_id, e]))
+    const triggered = evaluateAlerts([dockErrorRule], map)
+    expect(triggered).toHaveLength(0)
+  })
 })
