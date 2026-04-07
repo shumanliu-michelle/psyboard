@@ -84,16 +84,17 @@ export function BoardView({ board, onRefresh }: BoardViewProps) {
     setDrawerState(s => ({ ...s, open: false }))
   }
 
+  // On touch devices (iPad), use only TouchSensor (delay gates scroll vs drag).
+  // On non-touch (mouse), use PointerSensor (distance gates accidental clicks vs drags).
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 500,
-        tolerance: 5,
-      },
-    })
+    isTouchDevice
+      ? useSensor(TouchSensor, {
+          activationConstraint: { delay: 250, tolerance: 8 },
+        })
+      : useSensor(PointerSensor, {
+          activationConstraint: { distance: 8 },
+        })
   )
 
   function handleDragStart(event: DragStartEvent) {
