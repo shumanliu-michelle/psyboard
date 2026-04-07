@@ -6,6 +6,7 @@ import homeAssistantRouter from './home-assistant/index.js'
 import eventsRouter from './routes/events.js'
 import backupRouter from './routes/backup.js'
 import schemaRouter from './routes/schema.js'
+import haSensorsRouter from './routes/haSensors.js'
 import { startHAConnection } from './home-assistant/haConnection.js'
 import { startBackupScheduler } from './backup.js'
 
@@ -19,6 +20,7 @@ app.use('/api/board', boardRouter)
 app.use('/api/columns', columnsRouter)
 app.use('/api/tasks', tasksRouter)
 app.use('/api/home-assistant', homeAssistantRouter)
+app.use('/api/ha', haSensorsRouter)
 app.use('/api/events', eventsRouter)
 app.use('/api/backup', backupRouter)
 app.use('/api/schema', schemaRouter)
