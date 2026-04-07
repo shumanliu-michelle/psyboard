@@ -69,11 +69,14 @@ Returns the board schema psyduck needs to construct API calls:
   "endpoints": {
     "getBoard": "GET /api/board",
     "getSchema": "GET /api/schema",
+    "getHASensors": "GET /api/ha/sensors",
+    "getEvents": "GET /api/events (SSE stream)",
     "createColumn": "POST /api/columns { title, accent? }",
+    "deleteColumn": "DELETE /api/columns/:id",
     "createTask": "POST /api/tasks { title, columnId, description?, doDate?, dueDate?, priority?, assignee?, recurrence? }",
-    "updateTask": "PATCH /api/tasks/:id { title?, columnId?, doDate?, dueDate?, priority?, assignee?, recurrence?, completedAt? }",
+    "updateTask": "PATCH /api/tasks/:id { title?, columnId?, doDate?, dueDate?, priority?, assignee?, recurrence?, completedAt?, suppressNextOccurrence?, expectedUpdatedAt? }",
     "deleteTask": "DELETE /api/tasks/:id",
-    "reorderTask": "POST /api/tasks/reorder { taskId, targetColumnId, newIndex }"
+    "reorderTasks": "POST /api/tasks/reorder { taskId, targetColumnId, newIndex }"
   }
 }
 ```
