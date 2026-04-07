@@ -26,11 +26,6 @@ export class MockWebSocket {
   onerror: ((event: unknown) => void) | null = null
   onclose: ((event: unknown) => void) | null = null
 
-  // Track sent messages (deserialized objects)
-  static getSentMessages(): object[] {
-    return MockWebSocket.sentMessages
-  }
-
   constructor(url: string) {
     this.url = url
     MockWebSocket.instances.push(this)
@@ -95,5 +90,5 @@ export class MockWebSocket {
  * Used by tests to construct inbound messages from HA server.
  */
 export function makeFakeMessage(overrides: object): object {
-  return { id: 0, type: '', ...overrides }
+  return { id: -1, type: '', ...overrides }
 }

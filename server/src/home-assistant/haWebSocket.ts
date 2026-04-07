@@ -10,6 +10,15 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let reconnectAttempts = 0
 const MAX_RECONNECT_DELAY_MS = 300_000
 
+// Cached config — loaded lazily on first use (avoids module-init timing issues with mocks)
+let _cachedConfig: ReturnType<typeof loadHAConfig> | null = null
+function getConfig() {
+  if (!_cachedConfig) {
+    _cachedConfig = loadHAConfig()
+  }
+  return _cachedConfig
+}
+
 function getReconnectDelay(): number {
   const base = 1000
   return Math.min(base * 2 ** reconnectAttempts, MAX_RECONNECT_DELAY_MS)
@@ -25,6 +34,7 @@ function resetState(): void {
   reconnectAttempts = 0
   currentMsgId = 1
   _intentionalDisconnect = false
+  _cachedConfig = null
 }
 
 let _intentionalDisconnect = false
@@ -40,8 +50,9 @@ export function resetHAWSState(): void {
 }
 
 function send(msg: object): void {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(msg))
+  const socket = ws
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(msg))
   }
 }
 
@@ -50,6 +61,7 @@ function handleMessage(data: string): void {
   try {
     msg = JSON.parse(data) as WsMessage
   } catch {
+    console.warn('[HA WS] Failed to parse message:', data)
     return
   }
 
@@ -62,21 +74,34 @@ function handleMessage(data: string): void {
 
   if (msg.type === 'auth_success') {
     // Auth succeeded — subscribe to state_changed events
+    reconnectAttempts = 0
     send({ id: nextId(), type: 'subscribe_events', event_type: 'state_changed' })
     return
   }
 
+  if (msg.type === 'auth_invalid') {
+    console.error('[HA WS] Auth failed — invalid token')
+    reconnectAttempts++
+    return
+  }
+
   if (msg.type === 'event' && typeof msg === 'object') {
-    const eventData = msg as unknown as { event: { event_type: string; data: { entity_id: string; new_state: { state: string }; old_state: { state: string } } } }
-    if (eventData.event?.event_type === 'state_changed') {
-      handleStateChanged(eventData.event.data)
+    const eventMsg = msg as { event?: unknown }
+    if (eventMsg.event && typeof eventMsg.event === 'object') {
+      const eventData = eventMsg.event as { event_type?: string; data?: unknown }
+      if (eventData.event_type === 'state_changed' && eventData.data && typeof eventData.data === 'object') {
+        const data = eventData.data as { entity_id?: string; new_state?: { state?: string } }
+        if (data.entity_id && data.new_state?.state !== undefined) {
+          handleStateChanged(data)
+        }
+      }
     }
   }
 }
 
 function handleStateChanged(data: { entity_id: string; new_state: { state: string } }): void {
-  const config = loadHAConfig()
-  const relevantRules = config.alerts.filter(r => r.entityId === data.entity_id)
+  const cfg = getConfig()
+  const relevantRules = cfg.alerts.filter(r => r.entityId === data.entity_id)
   if (relevantRules.length === 0) return
 
   const entityMap = new Map([[data.entity_id, { entity_id: data.entity_id, state: data.new_state.state, attributes: {} }]])
@@ -90,7 +115,7 @@ function handleStateChanged(data: { entity_id: string; new_state: { state: strin
   if (created.length > 0 || skipped.length > 0) {
     console.log(`[HA WS] Created: ${created.join(', ')} | Skipped: ${skipped.join(', ')}`)
     const summary: BroadcastSummary = { source: 'home_assistant', created, skipped }
-    broadcast(undefined, summary)
+    broadcast('home_assistant', summary)
   }
 }
 
@@ -105,7 +130,6 @@ export function createHAWebSocket(): HAWSClient {
 
     ws.onopen = () => {
       console.log('[HA WS] Connected')
-      reconnectAttempts = 0
       // Wait for auth_required from server before sending auth
     }
 
