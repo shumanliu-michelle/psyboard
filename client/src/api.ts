@@ -69,4 +69,7 @@ export const api = {
 
   syncHA: () =>
     request<{ created: string[]; skipped: string[] }>('/home-assistant/check', { method: 'POST' }),
+
+  backup: () =>
+    request<{ backup: string }>('/backup', { method: 'POST' }),
 }

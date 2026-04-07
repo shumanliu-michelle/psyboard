@@ -34,6 +34,10 @@ export default function App() {
     console.log(`[HA] Sync complete: ${result.created.length} created, ${result.skipped.length} skipped`)
   }
 
+  async function handleBackup() {
+    await api.backup()
+  }
+
   function dismissToast() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToastSummary(null)
@@ -92,7 +96,7 @@ export default function App() {
   return (
     <FilterProvider tasks={board.tasks}>
       <BoardView board={board} onRefresh={loadBoard} />
-      <HeaderToolbar sseStatus={sseStatus} onHASync={handleHASync} />
+      <HeaderToolbar sseStatus={sseStatus} onHASync={handleHASync} onBackup={handleBackup} />
       <Toast summary={toastSummary} visible={toastSummary !== null} onDismiss={dismissToast} />
     </FilterProvider>
   )

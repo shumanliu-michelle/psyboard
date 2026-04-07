@@ -6,9 +6,10 @@ type SseStatus = 'connected' | 'connecting' | 'disconnected'
 interface HeaderToolbarProps {
   sseStatus: SseStatus
   onHASync?: () => Promise<void>
+  onBackup?: () => Promise<void>
 }
 
-export function HeaderToolbar({ sseStatus, onHASync }: HeaderToolbarProps) {
+export function HeaderToolbar({ sseStatus, onHASync, onBackup }: HeaderToolbarProps) {
   const {
     expanded, setExpanded,
     searchQuery, setSearchQuery,
@@ -17,6 +18,7 @@ export function HeaderToolbar({ sseStatus, onHASync }: HeaderToolbarProps) {
   } = useFilterContext()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [haSyncStatus, setHaSyncStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
   async function handleHASync() {
     if (!onHASync || haSyncStatus === 'loading') return
@@ -28,6 +30,19 @@ export function HeaderToolbar({ sseStatus, onHASync }: HeaderToolbarProps) {
     } catch {
       setHaSyncStatus('error')
       setTimeout(() => setHaSyncStatus('idle'), 4000)
+    }
+  }
+
+  async function handleBackup() {
+    if (!onBackup || backupStatus === 'loading') return
+    setBackupStatus('loading')
+    try {
+      await onBackup()
+      setBackupStatus('success')
+      setTimeout(() => setBackupStatus('idle'), 3000)
+    } catch {
+      setBackupStatus('error')
+      setTimeout(() => setBackupStatus('idle'), 4000)
     }
   }
 
@@ -115,6 +130,17 @@ export function HeaderToolbar({ sseStatus, onHASync }: HeaderToolbarProps) {
               disabled={haSyncStatus === 'loading'}
             >
               {haSyncStatus === 'loading' ? '⏳' : haSyncStatus === 'success' ? '✅' : haSyncStatus === 'error' ? '⚠️' : '🏠'}
+            </button>
+          )}
+          {onBackup && (
+            <button
+              className={`toolbar-btn backup-btn ${backupStatus}`}
+              onClick={handleBackup}
+              aria-label="Backup board"
+              title={backupStatus === 'loading' ? 'Backing up...' : backupStatus === 'success' ? 'Backup done!' : backupStatus === 'error' ? 'Backup failed' : 'Backup now'}
+              disabled={backupStatus === 'loading'}
+            >
+              {backupStatus === 'loading' ? '⏳' : backupStatus === 'success' ? '✅' : backupStatus === 'error' ? '⚠️' : '💾'}
             </button>
           )}
           <SseDot status={sseStatus} />
