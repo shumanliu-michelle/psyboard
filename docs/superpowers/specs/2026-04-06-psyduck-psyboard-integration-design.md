@@ -272,9 +272,8 @@ Send a morning household reminder to Slack channel C0AN2T02SNQ.
 2. **Tasks due today** — check psyboard: all tasks where dueDate or doDate is today (exclude Done column). Group by priority if multiple.
 3. **Tasks due tomorrow** — psyboard: tasks due tomorrow, heads-up
 4. **High-priority / overdue** — psyboard: any high-priority tasks overdue or due today
-5. **Shopping list summary** — psyboard: what's in the Shopping column (if non-empty)
-6. **Appointments today/tomorrow** — psyboard: tasks in Appointments column due today or tomorrow
-7. **HA alerts** — psyboard: any HA-sensor-triggered tasks that need attention (e.g. litter robot, vacuum alerts — these appear as tasks on psyboard when thresholds are breached)
+5. **Appointments today/tomorrow** — psyboard: tasks in Appointments column due today or tomorrow
+6. **HA alerts** — psyboard: any HA-sensor-triggered tasks that need attention (e.g. litter robot, vacuum alerts — these appear as tasks on psyboard when thresholds are breached)
 
 **Rules:**
 - Use psyboard_query to fetch tasks by due date, do date, column, and priority
@@ -293,15 +292,18 @@ Send a morning household reminder to Slack channel C0AN2T02SNQ.
 ```
 Send an evening household reminder to Slack channel C0AN2T02SNQ.
 
-**Format — include these sections if applicable:**
-1. **Dishwasher** — remind to run before bed if not done (check if a "run dishwasher" or similar task is in Today and not completed)
-2. **Pool pump** — remind to turn on if night temp ≤1°C
-3. **Laundry follow-up** — check psyboard for any laundry-related tasks still in Today
-4. **Tomorrow heads-up** — psyboard: tasks due tomorrow worth preparing tonight
-5. **Any urgent tasks still pending** — psyboard: high-priority tasks still not in Done as of now
+**Format — structure:**
+
+1. **Still on your plate tonight** — All tasks due today (dueDate <= today) that are NOT in Done. Show high-priority first, then medium, then low. Include task title and column. Keep it scannable.
+
+2. **Tomorrow's appointments** — Tasks in the Appointments column due tomorrow. A simple heads-up so the household can prepare.
+
+3. **HA alerts** — Any urgent HA alerts (e.g. litter robot waste drawer full or only 1-2 cycles left). Check via psyboard_ha_sensors — include only if genuinely urgent.
 
 **Rules:**
-- Check psyboard via psyboard_query for task completion status
+- Use psyboard_query to fetch tasks by dueDate, column, and priority
+- Use psyboard_ha_sensors for HA alert check (high-priority HA device status)
+- Sort by priority: high → medium → low
 - Keep the tone calm, structured, low-noise, and natural
 - Omit sections with nothing to report
 - If nothing relevant applies, send a minimal check-in or stay silent
@@ -360,7 +362,7 @@ Additional custom columns can be created as needed via `POST /api/columns`.
 
 ## Section 7: Open Questions / Future
 
-- **Assignee in reminders:** When psyduck sends a morning summary, should it indicate which tasks belong to Shuman (SL) vs Kejie (KL)?
+- **Assignee in reminders:** Yes — when a task has an assignee (SL or KL), mention @Kejie or @Shuman in the reminder so it's clear who the task belongs to.
 - **Recurring task completion-based rescheduling:** When a recurring task is marked done, psyboard advances the next due date. psyduck confirms "done" with user before marking complete — so this flow works naturally.
 - **Slack message threading:** Should psyduck's board query responses thread off the original cron reminder, or post as new messages?
 - **One-off favor tasks:** If user says "can you ask Kejie to pick up milk", this isn't a psyboard task — it's a coordination ask. This stays in psyduck's conversational domain, not board.
@@ -399,8 +401,8 @@ Previously, psyboard polled HA every `pollIntervalMinutes` (default 5 min) via `
 **Reconnection:** If the WebSocket disconnects (network issue, HA restart), the client reconnects with **exponential backoff** (1s → 2s → 4s → ... → 5 min cap). Calling `stopScheduler()` or `disconnect()` does an intentional disconnect that does NOT trigger reconnect.
 
 **Config changes:**
-- `pollIntervalMinutes` in `home-assistant.json` is **ignored** (WS mode has no polling interval)
-- The `home-assistant.json` alerts array and `defaultColumn` are still used
+- `pollIntervalMinutes` is **removed** — WS mode has no polling interval
+- `home-assistant.json` still uses `defaultColumn` and `alerts` array
 - `HA .env` still requires `HOME_ASSISTANT_URL` and `HOME_ASSISTANT_TOKEN`
 
 **Files:**
