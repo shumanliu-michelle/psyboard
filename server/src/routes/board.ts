@@ -11,8 +11,9 @@ router.get('/', (_req, res) => {
     const board = readBoard()
 
     // Filter Done tasks to last 7 days by default
-    const now = Date.now()
-    const sevenDaysAgo = now - SEVEN_DAYS_MS
+    const todayLocal = new Date()
+    todayLocal.setHours(0, 0, 0, 0)  // midnight today in local time
+    const sevenDaysAgoMs = todayLocal.getTime() - SEVEN_DAYS_MS
 
     const filteredTasks = board.tasks.filter(task => {
       if (task.columnId !== DONE_COLUMN_ID) {
@@ -22,7 +23,7 @@ router.get('/', (_req, res) => {
         return true
       }
       const completedAtMs = new Date(task.completedAt).getTime()
-      return completedAtMs >= sevenDaysAgo
+      return completedAtMs >= sevenDaysAgoMs
     })
 
     res.json({ ...board, tasks: filteredTasks })
