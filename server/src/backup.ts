@@ -35,8 +35,11 @@ function formatTimestamp(date: Date): string {
 
 export async function createBackup(): Promise<void> {
   const boardFile = getBoardFile()
+  const dataDir = getDataDir()
+  console.log(`[backup] createBackup called — dataDir=${dataDir} boardFile=${boardFile}`)
 
   if (!fs.existsSync(boardFile)) {
+    console.warn(`[backup] board.json not found at ${boardFile}, skipping backup`)
     return
   }
 
