@@ -180,11 +180,11 @@ Parameters:
 
 ### Tool: `psyboard_ha_sensors`
 
-**Purpose:** Fetch live sensor readings from Home Assistant via psyboard.
+**Purpose:** On-demand query only — use when the user directly asks about a specific HA device status (e.g. "how full is the litter robot?", "any vacuum alerts?"). Not used in scheduled reminders — those pull HA alerts from psyboard tasks.
 
 ```
 Tool: psyboard_ha_sensors
-Description: Returns live Home Assistant sensor data — litter robot waste level, robot vacuum water/maintenance status, and other HA device states. Use when sending morning or evening reminders that include HA device status.
+Description: Returns live Home Assistant sensor data — litter robot waste level, robot vacuum water/maintenance status, and other HA device states. Use ONLY for on-demand queries about specific devices.
 ```
 
 ### Tool: `psyboard_get_schema`
@@ -250,6 +250,9 @@ When user says "done", "I finished", "completed":
 **"Show me high priority tasks"**
 → `psyboard_query(priority="high", includeDone=false)`
 
+**"How full is the litter robot?" / "Any vacuum alerts?"**
+→ `psyboard_ha_sensors` → format the relevant sensor values
+
 ---
 
 ## Section 4: Cron Job Updates
@@ -272,12 +275,12 @@ Send a morning household reminder to Slack channel C0AN2T02SNQ.
 4. **High-priority / overdue** — psyboard: any high-priority tasks overdue or due today
 5. **Shopping list summary** — psyboard: what's in the Shopping column (if non-empty)
 6. **Appointments today/tomorrow** — psyboard: tasks in Appointments column due today or tomorrow
-7. **Litter robot** — use psyboard_ha_sensors: include if waste drawer >70%
-8. **Robot vacuum alerts** — use psyboard_ha_sensors: include if water shortage or maintenance needed
+7. **HA alerts** — psyboard: any HA-sensor-triggered tasks that need attention (e.g. litter robot, vacuum alerts — these appear as tasks on psyboard when thresholds are breached)
 
 **Rules:**
 - Use psyboard_query to fetch tasks by due date, do date, column, and priority
-- Use psyboard_ha_sensors for HA device status
+- HA device alerts come through psyboard tasks (created by psyboard's HA integration), not directly from HA
+- Use psyboard_ha_sensors only for on-demand queries when user asks about a specific device
 - Format tasks clearly: title, due date, priority, assignee
 - Use natural household wording — not stiff task-manager phrasing
 - Keep it short, structured, and easy to scan
@@ -329,11 +332,14 @@ workspace-psyduck/
 - `scripts/ha_state.py` — DELETED ✓
 
 Before deletion, these files were migrated as follows:
-- Pet care rules (Lucario recipe, Abyssinian care) → `MEMORY.md`
-- Plant watering rules/moisture scales → `MEMORY.md`
+- Pet care rules (Lucario recipe, Absol care) → `MEMORY.md` ✓
+- Plant watering rules/moisture scales → `MEMORY.md` ✓
+- Gardener + billing → `MEMORY.md` household systems section ✓
+- Location → `MEMORY.md` ✓
 - Recurring task schedules → psyboard via `POST /api/tasks`
 - Appointments → psyboard "Appointments" column via `POST /api/tasks`
 - HA sensor access → `GET /api/ha/sensors` (psyboard handles HA directly)
+- `HOUSEHOLD_SYSTEM.md` — DELETED ✓ (content merged into `MEMORY.md`)
 
 ---
 
@@ -359,6 +365,7 @@ Additional custom columns can be created as needed via `POST /api/columns`.
 - **Recurring task completion-based rescheduling:** When a recurring task is marked done, psyboard advances the next due date. psyduck confirms "done" with user before marking complete — so this flow works naturally.
 - **Slack message threading:** Should psyduck's board query responses thread off the original cron reminder, or post as new messages?
 - **One-off favor tasks:** If user says "can you ask Kejie to pick up milk", this isn't a psyboard task — it's a coordination ask. This stays in psyduck's conversational domain, not board.
+- **HA on-demand vs reminder scope:** `psyboard_ha_sensors` is for direct queries only. If you want HA alerts in morning/evening reminders, psyboard's HA integration should create tasks on the board when thresholds are breached, and those tasks appear via `psyboard_query`. Currently the spec reflects this design.
 
 ---
 
