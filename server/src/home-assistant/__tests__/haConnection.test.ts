@@ -8,22 +8,21 @@ vi.mock('../config.js', () => ({
   loadHAConfig: vi.fn(),
 }))
 
-import { startScheduler, stopScheduler, getActiveTimers } from '../haConnection.js'
+import { startHAConnection, stopHAConnection, isHAConnected } from '../haConnection.js'
 import { createHAWebSocket } from '../haWebSocket.js'
 import { loadHAConfig } from '../config.js'
 
-describe('HA Scheduler', () => {
+describe('HA Connection', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Reset module state by calling stopScheduler first
-    stopScheduler()
+    stopHAConnection()
   })
 
   afterEach(() => {
-    stopScheduler()
+    stopHAConnection()
   })
 
-  it('startScheduler called twice only creates one WS client', () => {
+  it('startHAConnection called twice only creates one WS client', () => {
     const mockConfig = {
       defaultColumn: 'Today',
       alerts: [
@@ -36,17 +35,14 @@ describe('HA Scheduler', () => {
       disconnect: vi.fn(),
     })
 
-    startScheduler()
-    startScheduler()
+    startHAConnection()
+    startHAConnection()
 
-    // createHAWebSocket should only have been called ONCE
     expect(createHAWebSocket).toHaveBeenCalledOnce()
-
-    // getActiveTimers should return 1
-    expect(getActiveTimers()).toBe(1)
+    expect(isHAConnected()).toBe(true)
   })
 
-  it('stopScheduler only logs when client was active', () => {
+  it('stopHAConnection only logs when client was active', () => {
     const mockConfig = {
       defaultColumn: 'Today',
       alerts: [],
@@ -59,31 +55,27 @@ describe('HA Scheduler', () => {
 
     const consoleLogSpy = vi.spyOn(console, 'log')
 
-    // Stop without starting — nothing was running
-    stopScheduler()
-    // The "Stopped" log should NOT appear when nothing was running
-    expect(consoleLogSpy).not.toHaveBeenCalledWith('[HA Scheduler] Stopped')
+    stopHAConnection()
+    expect(consoleLogSpy).not.toHaveBeenCalledWith('[HA Connection] Stopped')
 
-    // Now start and stop
-    startScheduler()
+    startHAConnection()
     consoleLogSpy.mockClear()
-    stopScheduler()
-    // The "Stopped" log SHOULD appear when client was running
-    expect(consoleLogSpy).toHaveBeenCalledWith('[HA Scheduler] Stopped')
+    stopHAConnection()
+    expect(consoleLogSpy).toHaveBeenCalledWith('[HA Connection] Stopped')
   })
 
-  it('startScheduler does not start when HA config throws', () => {
+  it('startHAConnection does not start when HA config throws', () => {
     ;(loadHAConfig as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error('HA not configured')
     })
 
-    startScheduler()
+    startHAConnection()
 
     expect(createHAWebSocket).not.toHaveBeenCalled()
-    expect(getActiveTimers()).toBe(0)
+    expect(isHAConnected()).toBe(false)
   })
 
-  it('startScheduler starts WS client with correct config', () => {
+  it('startHAConnection starts WS client with correct config', () => {
     const mockConfig = {
       defaultColumn: 'Today',
       alerts: [
@@ -97,7 +89,7 @@ describe('HA Scheduler', () => {
     }
     ;(createHAWebSocket as ReturnType<typeof vi.fn>).mockReturnValue(mockClient)
 
-    startScheduler()
+    startHAConnection()
 
     expect(createHAWebSocket).toHaveBeenCalledOnce()
     expect(mockClient.connect).toHaveBeenCalledOnce()

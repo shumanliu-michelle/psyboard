@@ -17,23 +17,23 @@ vi.mock('../routes/events.js', () => ({
   broadcast: vi.fn(),
 }))
 
-import { startScheduler, stopScheduler, getActiveTimers } from '../home-assistant/haConnection.js'
+import { startHAConnection, stopHAConnection, isHAConnected } from '../home-assistant/haConnection.js'
 import { loadHAConfig } from '../home-assistant/config.js'
 import { createHAWebSocket } from '../home-assistant/haWebSocket.js'
 
-describe('HA Scheduler — WebSocket mode', () => {
+describe('HA Connection', () => {
   let mockWsClient: { connect: () => void; disconnect: () => void }
 
   beforeEach(() => {
     writeBoard(createTestBoard())
     vi.clearAllMocks()
-    stopScheduler()
+    stopHAConnection()
     mockWsClient = { connect: vi.fn(), disconnect: vi.fn() }
     vi.mocked(createHAWebSocket).mockReturnValue(mockWsClient)
   })
 
   afterEach(() => {
-    stopScheduler()
+    stopHAConnection()
   })
 
   it('starts a single WebSocket client and connects', () => {
@@ -43,31 +43,31 @@ describe('HA Scheduler — WebSocket mode', () => {
     }
     vi.mocked(loadHAConfig).mockReturnValue(mockConfig)
 
-    startScheduler()
+    startHAConnection()
 
-    expect(getActiveTimers()).toBe(1)
+    expect(isHAConnected()).toBe(true)
     expect(mockWsClient.connect).toHaveBeenCalledOnce()
   })
 
-  it('stopScheduler disconnects the WebSocket client', () => {
+  it('stopHAConnection disconnects the WebSocket client', () => {
     const mockConfig = {
       defaultColumn: 'Today',
       alerts: [{ entityId: 'sensor.foo', condition: { type: 'isOn' }, taskTitle: 'Foo', priority: 'high' as const }],
     }
     vi.mocked(loadHAConfig).mockReturnValue(mockConfig)
 
-    startScheduler()
-    stopScheduler()
+    startHAConnection()
+    stopHAConnection()
 
     expect(mockWsClient.disconnect).toHaveBeenCalledOnce()
-    expect(getActiveTimers()).toBe(0)
+    expect(isHAConnected()).toBe(false)
   })
 
   it('does not start when HA config throws (not configured)', () => {
     vi.mocked(loadHAConfig).mockImplementation(() => { throw new Error('HA .env not found') })
 
-    startScheduler()
+    startHAConnection()
 
-    expect(getActiveTimers()).toBe(0)
+    expect(isHAConnected()).toBe(false)
   })
 })

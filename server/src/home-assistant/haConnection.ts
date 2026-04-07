@@ -3,34 +3,34 @@ import { loadHAConfig } from './config.js'
 
 let wsClient: HAWSClient | null = null
 
-export function startScheduler(): void {
+export function startHAConnection(): void {
   let config: ReturnType<typeof loadHAConfig>
   try {
     config = loadHAConfig()
   } catch (err) {
-    console.warn(`[HA Scheduler] Not starting — HA not configured: ${(err as Error).message}`)
+    console.warn(`[HA Connection] Not starting — HA not configured: ${(err as Error).message}`)
     return
   }
 
   if (wsClient !== null) {
-    console.log('[HA Scheduler] Already running')
+    console.log('[HA Connection] Already running')
     return
   }
 
-  console.log(`[HA Scheduler] Starting WebSocket subscription for ${config.alerts.length} alerts`)
+  console.log(`[HA Connection] Starting WebSocket subscription for ${config.alerts.length} alerts`)
 
   wsClient = createHAWebSocket()
   wsClient.connect()
 }
 
-export function stopScheduler(): void {
+export function stopHAConnection(): void {
   if (wsClient !== null) {
     wsClient.disconnect()
     wsClient = null
-    console.log('[HA Scheduler] Stopped')
+    console.log('[HA Connection] Stopped')
   }
 }
 
-export function getActiveTimers(): number {
-  return wsClient !== null ? 1 : 0
+export function isHAConnected(): boolean {
+  return wsClient !== null
 }
