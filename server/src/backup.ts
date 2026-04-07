@@ -3,7 +3,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const DEFAULT_DATA_DIR = path.join(__dirname, '..', '..', 'data')
+// Server runs from psyboard root via `npm run dev`, so process.cwd() = project root
+const DEFAULT_DATA_DIR = path.join(process.cwd(), 'server', 'data')
 
 // Configurable data dir — mirrors boardStore path configuration
 let _dataDir: string | null = null
