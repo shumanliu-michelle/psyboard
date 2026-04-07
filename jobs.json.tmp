@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "b03ba537-c930-4f1d-a088-deefe5a6f9c2",
+      "agentId": "psyduck",
+      "sessionKey": "agent:main:main",
+      "name": "Daily morning household reminder [psyduck]",
+      "enabled": true,
+      "createdAtMs": 1773981035419,
+      "updatedAtMs": 1775487700288,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 8 * * *",
+        "tz": "America/Los_Angeles"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Send a morning household reminder to Slack channel C0AN2T02SNQ.\n\n**Format — include these sections:**\n1. **Weather** — Sammamish, WA 98074: current conditions and today's temperature range in °C\n2. **Tasks due today** — check psyboard: all tasks where dueDate or doDate is today (exclude Done column). Group by priority if multiple.\n3. **Tasks due tomorrow** — psyboard: tasks due tomorrow, heads-up\n4. **High-priority / overdue** — psyboard: any high-priority tasks overdue or due today\n5. **Shopping list summary** — psyboard: what's in the Shopping column (if non-empty)\n6. **Appointments today/tomorrow** — psyboard: tasks in Appointments column due today or tomorrow\n7. **HA alerts** — psyboard: any HA-sensor-triggered tasks that need attention (e.g. litter robot, vacuum alerts — these appear as tasks on psyboard when thresholds are breached)\n\n**Rules:**\n- Use psyboard_query to fetch tasks by due date, do date, column, and priority\n- HA device alerts come through psyboard tasks (created by psyboard's HA integration), not directly from HA\n- Format tasks clearly: title, due date, priority, @assignee\n- Use natural household wording — not stiff task-manager phrasing\n- Keep it short, structured, and easy to scan\n- Omit sections with nothing to report\n",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "slack",
+        "to": "channel:C0AN2T02SNQ"
+      },
+      "state": {
+        "nextRunAtMs": 1775574000000,
+        "lastRunAtMs": 1775487600014,
+        "lastRunStatus": "ok",
+        "lastStatus": "ok",
+        "lastDurationMs": 100274,
+        "lastDeliveryStatus": "delivered",
+        "consecutiveErrors": 0,
+        "lastDelivered": true
+      }
+    },
+    {
+      "id": "42644d2d-90e7-45de-8d76-e7916108f9bf",
+      "agentId": "psyduck",
+      "sessionKey": "agent:main:main",
+      "name": "Daily evening household reminder [psyduck]",
+      "enabled": true,
+      "createdAtMs": 1773981035432,
+      "updatedAtMs": 1775448185075,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 21 * * *",
+        "tz": "America/Los_Angeles"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Send an evening household reminder to Slack channel C0AN2T02SNQ.\n\n**Format — structure:**\n\n1. **Still on your plate tonight** — All tasks due today (dueDate <= today) that are NOT in Done. Show high-priority first, then medium, then low. Include task title and column. Keep it scannable.\n\n2. **Tomorrow's appointments** — Tasks in the Appointments column due tomorrow. A simple heads-up so the household can prepare.\n\n3. **HA alerts** — Any urgent HA alerts (e.g. litter robot waste drawer full or only 1-2 cycles left). Check via psyboard_ha_sensors — include only if genuinely urgent.\n\n**Rules:**\n- Use psyboard_query to fetch tasks by dueDate, column, and priority\n- Use psyboard_ha_sensors for HA alert check (high-priority HA device status)\n- Sort by priority: high → medium → low\n- Keep the tone calm, structured, low-noise, and natural\n- Omit sections with nothing to report\n- If nothing relevant applies, send a minimal check-in or stay silent\n",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "slack",
+        "to": "channel:C0AN2T02SNQ"
+      },
+      "state": {
+        "nextRunAtMs": 1775534400000,
+        "lastRunAtMs": 1775448000012,
+        "lastRunStatus": "ok",
+        "lastStatus": "ok",
+        "lastDurationMs": 185063,
+        "lastDeliveryStatus": "delivered",
+        "consecutiveErrors": 0,
+        "lastDelivered": true
+      }
+    }
+  ]
+}
