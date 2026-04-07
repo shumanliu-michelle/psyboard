@@ -38,6 +38,7 @@ router.get('/', (_req, res) => {
         updateTask: 'PATCH /api/tasks/:id { title?, columnId?, doDate?, dueDate?, priority?, assignee?, recurrence?, completedAt?, suppressNextOccurrence?, expectedUpdatedAt? }',
         deleteTask: 'DELETE /api/tasks/:id',
         reorderTasks: 'POST /api/tasks/reorder { taskId, targetColumnId, newIndex }',
+        queryTasks: 'GET /api/tasks — flexible task query. Params: columnId, title, dueDate, doDate, completedAt, priority, assignee with operators (eq, ne, gte, gt, lte, lt, cont). limit, offset, sortBy, sortDir. Returns { tasks, hasMore }.',
       },
     })
   } catch (err) {

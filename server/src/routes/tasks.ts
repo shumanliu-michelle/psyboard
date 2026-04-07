@@ -2,6 +2,7 @@ import express from 'express'
 import { Router } from 'express'
 import { createTask, updateTask, deleteTask, readBoard, reorderTasks, ConflictError } from '../store/boardStore.js'
 import type { CreateTaskInput, UpdateTaskInput, Task } from '../types.js'
+import { DONE_COLUMN_ID } from '../types.js'
 import { CronExpressionParser } from 'cron-parser'
 import type { RecurrenceConfig } from '../types.js'
 import { broadcast, type BroadcastSummary } from './events.js'
@@ -45,6 +46,161 @@ function validateRecurrenceInput(
 }
 
 const router = Router()
+
+const DEFAULT_LIMIT = 50
+const MAX_LIMIT = 200
+
+type TaskFilter = (task: Task) => boolean
+
+function parseFilterParam(raw: string): { field: string; operator: string; value: string } {
+  // Input format: field=operator:value or field=value (defaults to eq)
+  // Split on first '=' to separate field from operator:value
+  const equalsIdx = raw.indexOf('=')
+  if (equalsIdx === -1) return { field: raw, operator: 'eq', value: '' }
+  const field = raw.slice(0, equalsIdx)
+  const rest = raw.slice(equalsIdx + 1)
+  // rest is 'operator:value' or just 'value'
+  const colonIdx = rest.indexOf(':')
+  if (colonIdx === -1) return { field, operator: 'eq', value: rest }
+  const operator = rest.slice(0, colonIdx)
+  const value = rest.slice(colonIdx + 1)
+  return { field, operator, value }
+}
+
+function buildTaskFilter(field: string, operator: string, rawValue: string): TaskFilter | null {
+  switch (field) {
+    case 'columnId':
+    case 'priority':
+    case 'assignee': {
+      return (task) => {
+        const fieldValue = (task as any)[field] as string | undefined
+        if (operator === 'eq') return fieldValue === rawValue
+        if (operator === 'ne') return fieldValue !== rawValue
+        return false
+      }
+    }
+    case 'title': {
+      if (operator === 'cont') {
+        return (task) => (task.title || '').toLowerCase().includes(rawValue.toLowerCase())
+      }
+      return null
+    }
+    case 'dueDate':
+    case 'doDate':
+    case 'completedAt': {
+      return (task) => {
+        const dateVal = (task as any)[field] as string | undefined
+        if (!dateVal) return false
+        const taskMs = new Date(dateVal).getTime()
+        const queryMs = new Date(rawValue).getTime()
+        switch (operator) {
+          case 'eq': return dateVal === rawValue
+          case 'gte': return taskMs >= queryMs
+          case 'gt': return taskMs > queryMs
+          case 'lte': return taskMs <= queryMs
+          case 'lt': return taskMs < queryMs
+          default: return false
+        }
+      }
+    }
+    default:
+      return null
+  }
+}
+
+router.get('/', (req, res) => {
+  const { limit: limitStr, offset: offsetStr, sortBy, sortDir } = req.query as Record<string, string>
+
+  // Collect filters from all query params except limit/offset/sortBy/sortDir
+  const filters: TaskFilter[] = []
+  const metaParams = new Set(['limit', 'offset', 'sortBy', 'sortDir'])
+
+  for (const [key, rawVal] of Object.entries(req.query)) {
+    if (metaParams.has(key)) continue
+    // Handle array values from duplicate query params (e.g., dueDate=gte:...&dueDate=lte:...)
+    const rawVals = Array.isArray(rawVal) ? rawVal : [rawVal]
+    for (const rv of rawVals) {
+      if (typeof rv !== 'string') continue
+      const { field, operator, value } = parseFilterParam(`${key}=${rv}`)
+      if (metaParams.has(field)) continue
+      if (!value) continue
+
+      // Validate date fields
+      if ((field === 'dueDate' || field === 'doDate' || field === 'completedAt') && operator !== 'cont') {
+        const parsed = new Date(value)
+        if (isNaN(parsed.getTime())) {
+          res.status(400).json({ error: `Invalid date value for ${field}: ${value}` })
+          return
+        }
+      }
+
+      const filterFn = buildTaskFilter(field, operator, value)
+      if (filterFn === null) {
+        res.status(400).json({ error: `Unknown filter field or operator: ${key}=${rv}` })
+        return
+      }
+      filters.push(filterFn)
+    }
+  }
+
+  const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(limitStr) || DEFAULT_LIMIT))
+  const offset = Math.max(0, parseInt(offsetStr) || 0)
+
+  try {
+    const board = readBoard()
+
+    let filtered = board.tasks.filter(task => filters.every(f => f(task)))
+
+    // Detect if this is a Done column query (columnId=eq:col-done)
+    const isDoneQuery = filters.some(f => {
+      return f({ columnId: DONE_COLUMN_ID } as Task)
+    })
+
+    const effectiveSortBy = sortBy || (isDoneQuery ? 'completedAt' : 'dueDate')
+    const effectiveSortDir = sortDir || (isDoneQuery ? 'desc' : 'asc')
+
+    const PRIORITY_WEIGHT: Record<string, number> = { high: 0, medium: 1, low: 2 }
+
+    filtered.sort((a, b) => {
+      let aVal: number | string, bVal: number | string
+      switch (effectiveSortBy) {
+        case 'completedAt':
+          aVal = a.completedAt ? new Date(a.completedAt).getTime() : 0
+          bVal = b.completedAt ? new Date(b.completedAt).getTime() : 0
+          break
+        case 'dueDate':
+          aVal = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
+          bVal = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
+          break
+        case 'doDate':
+          aVal = a.doDate ? new Date(a.doDate).getTime() : Infinity
+          bVal = b.doDate ? new Date(b.doDate).getTime() : Infinity
+          break
+        case 'priority':
+          aVal = PRIORITY_WEIGHT[a.priority || 'medium']
+          bVal = PRIORITY_WEIGHT[b.priority || 'medium']
+          break
+        case 'order':
+          aVal = a.order; bVal = b.order; break
+        case 'createdAt':
+          aVal = new Date(a.createdAt).getTime(); bVal = new Date(b.createdAt).getTime(); break
+        default:
+          aVal = a.order; bVal = b.order
+      }
+      if (aVal < bVal) return effectiveSortDir === 'asc' ? -1 : 1
+      if (aVal > bVal) return effectiveSortDir === 'asc' ? 1 : -1
+      return 0
+    })
+
+    const totalMatching = filtered.length
+    const page = filtered.slice(offset, offset + limit)
+    const hasMore = offset + limit < totalMatching
+
+    res.json({ tasks: page, hasMore })
+  } catch {
+    res.status(500).json({ error: 'Failed to query tasks' })
+  }
+})
 
 router.post('/', (req, res) => {
   const { title, columnId, description, doDate, dueDate, priority, assignee, recurrence } = req.body as CreateTaskInput

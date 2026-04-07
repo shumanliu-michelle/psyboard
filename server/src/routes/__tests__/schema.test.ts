@@ -43,6 +43,7 @@ describe('GET /api/schema', () => {
     expect(res.body.endpoints).toHaveProperty('updateTask')
     expect(res.body.endpoints).toHaveProperty('deleteTask')
     expect(res.body.endpoints).toHaveProperty('reorderTasks')
+    expect(res.body.endpoints).toHaveProperty('queryTasks')
   })
 
   it('returns column objects with id, title, kind, systemKey, position', async () => {
