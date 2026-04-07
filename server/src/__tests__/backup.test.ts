@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import fs from 'fs'
-import path from 'path'
 import request from 'supertest'
 import { app } from '../index.js'
 import { writeBoard } from '../store/boardStore.js'
@@ -69,6 +68,7 @@ describe('POST /api/backup', () => {
   })
 
   afterEach(() => {
+    vi.restoreAllMocks()
     stopBackupScheduler()
     resetDataDir()
     teardownTestBoard()
