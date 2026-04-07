@@ -3,6 +3,11 @@ import { MockWebSocket, makeFakeMessage } from './testHelpers.js'
 
 vi.stubGlobal('WebSocket', MockWebSocket)
 
+const originalSetTimeout = global.setTimeout
+const originalClearTimeout = global.clearTimeout
+vi.stubGlobal('setTimeout', vi.fn(() => 0))
+vi.stubGlobal('clearTimeout', vi.fn())
+
 vi.mock('../config.js', () => ({
   loadHAEnv: vi.fn(),
   loadHAConfig: vi.fn(),
@@ -227,5 +232,113 @@ describe('HA WebSocket Client', () => {
     client.disconnect()
     // Note: after disconnect, ws is null, so connect() will create a new instance
     // This is correct behavior — disconnect prevents the automatic reconnect
+  })
+
+  it('calculates exponential backoff delays correctly', async () => {
+    const mockEnv = { HOME_ASSISTANT_URL: 'http://localhost:8123', HOME_ASSISTANT_TOKEN: 'test-token' }
+    const mockConfig = {
+      defaultColumn: 'Today',
+      alerts: [],
+    }
+    ;(loadHAEnv as ReturnType<typeof vi.fn>).mockReturnValue(mockEnv)
+    ;(loadHAConfig as ReturnType<typeof vi.fn>).mockReturnValue(mockConfig)
+
+    const client = createHAWebSocket()
+    client.connect()
+
+    MockWebSocket.emitOpen()
+    MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_required' }))
+    MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_success' }))
+
+    // Simulate disconnects and check reconnect delay increases exponentially
+    // After 1st disconnect: 1000ms (1s)
+    // After 2nd disconnect: 2000ms (2s)
+    // After 3rd disconnect: 4000ms (4s)
+    for (let i = 1; i <= 4; i++) {
+      MockWebSocket.emitClose()
+      // Check reconnect was scheduled with expected delay
+      const expectedDelay = 1000 * Math.pow(2, i - 1)
+      expect(vi.mocked(setTimeout).mock.calls.at(-1)?.[1]).toBe(expectedDelay)
+      // Reconnect to continue testing
+      client.connect()
+      MockWebSocket.emitOpen()
+      MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_required' }))
+      MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_success' }))
+    }
+  })
+
+  it('caps reconnect delay at MAX_RECONNECT_DELAY_MS (5 minutes)', async () => {
+    const mockEnv = { HOME_ASSISTANT_URL: 'http://localhost:8123', HOME_ASSISTANT_TOKEN: 'test-token' }
+    const mockConfig = {
+      defaultColumn: 'Today',
+      alerts: [],
+    }
+    ;(loadHAEnv as ReturnType<typeof vi.fn>).mockReturnValue(mockEnv)
+    ;(loadHAConfig as ReturnType<typeof vi.fn>).mockReturnValue(mockConfig)
+
+    const client = createHAWebSocket()
+    client.connect()
+
+    MockWebSocket.emitOpen()
+    MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_required' }))
+    MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_success' }))
+
+    // Simulate many disconnects to exceed the cap
+    for (let i = 0; i < 10; i++) {
+      MockWebSocket.emitClose()
+      // After many reconnects, delay should be capped at 300000ms
+      const scheduledDelay = vi.mocked(setTimeout).mock.calls.at(-1)?.[1] as number
+      expect(scheduledDelay).toBeLessThanOrEqual(300_000)
+      // Reconnect to continue testing
+      client.connect()
+      MockWebSocket.emitOpen()
+      MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_required' }))
+      MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_success' }))
+    }
+  })
+
+  it('connect() is idempotent — calling twice only creates one connection', async () => {
+    const mockEnv = { HOME_ASSISTANT_URL: 'http://localhost:8123', HOME_ASSISTANT_TOKEN: 'test-token' }
+    const mockConfig = {
+      defaultColumn: 'Today',
+      alerts: [],
+    }
+    ;(loadHAEnv as ReturnType<typeof vi.fn>).mockReturnValue(mockEnv)
+    ;(loadHAConfig as ReturnType<typeof vi.fn>).mockReturnValue(mockConfig)
+
+    const client = createHAWebSocket()
+    client.connect()
+    client.connect()
+    client.connect()
+
+    // Should only have created one WebSocket instance
+    expect(MockWebSocket.instances.length).toBe(1)
+  })
+
+  it('disconnect() prevents automatic reconnect on onclose', async () => {
+    const mockEnv = { HOME_ASSISTANT_URL: 'http://localhost:8123', HOME_ASSISTANT_TOKEN: 'test-token' }
+    const mockConfig = {
+      defaultColumn: 'Today',
+      alerts: [],
+    }
+    ;(loadHAEnv as ReturnType<typeof vi.fn>).mockReturnValue(mockEnv)
+    ;(loadHAConfig as ReturnType<typeof vi.fn>).mockReturnValue(mockConfig)
+
+    const client = createHAWebSocket()
+    client.connect()
+
+    MockWebSocket.emitOpen()
+    MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_required' }))
+    MockWebSocket.emitMessage(makeFakeMessage({ type: 'auth_success' }))
+
+    // Clear any pending timers
+    vi.clearAllMocks()
+
+    // Disconnect sets _intentionalDisconnect = true
+    // ws.close() triggers onclose synchronously, but _intentionalDisconnect=true prevents reconnect
+    client.disconnect()
+
+    // No reconnect should be scheduled after intentional disconnect
+    expect(setTimeout).not.toHaveBeenCalled()
   })
 })

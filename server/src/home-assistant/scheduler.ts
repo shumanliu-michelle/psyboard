@@ -27,8 +27,8 @@ export function stopScheduler(): void {
   if (wsClient !== null) {
     wsClient.disconnect()
     wsClient = null
+    console.log('[HA Scheduler] Stopped')
   }
-  console.log('[HA Scheduler] Stopped')
 }
 
 export function getActiveTimers(): number {
