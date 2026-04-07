@@ -68,13 +68,17 @@ function handleMessage(data: string): void {
   // Handle auth flow: server tells us to authenticate, we send auth, server confirms, we subscribe
   if (msg.type === 'auth_required') {
     const env = loadHAEnv()
-    send({ id: nextId(), type: 'auth', access_token: env.HOME_ASSISTANT_TOKEN })
+    console.log('[HA WS] Sending auth')
+    // Note: auth message must NOT include an id field — HA rejects extra keys
+    send({ type: 'auth', access_token: env.HOME_ASSISTANT_TOKEN })
     return
   }
 
-  if (msg.type === 'auth_success') {
+  if (msg.type === 'auth_success' || msg.type === 'auth_ok') {
     // Auth succeeded — subscribe to state_changed events
     reconnectAttempts = 0
+    console.log('[HA WS] Auth success — subscribing to state_changed events')
+    // Note: subscribe_events MUST include an id field — HA requires it for response correlation
     send({ id: nextId(), type: 'subscribe_events', event_type: 'state_changed' })
     return
   }
@@ -129,7 +133,7 @@ export function createHAWebSocket(): HAWSClient {
     ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
-      console.log('[HA WS] Connected')
+      console.log('[HA WS] Connected, waiting for auth_required...')
       // Wait for auth_required from server before sending auth
     }
 
