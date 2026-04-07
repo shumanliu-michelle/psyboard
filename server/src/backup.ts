@@ -44,6 +44,7 @@ export async function createBackup(): Promise<void> {
     const timestamp = formatTimestamp(new Date())
     const backupFile = path.join(getDataDir(), `board.${timestamp}.json`)
     fs.copyFileSync(boardFile, backupFile)
+    console.log(`[backup] Created backup: ${backupFile}`)
 
     // Cleanup old backups — keep only the most recent
     const files = fs.readdirSync(getDataDir())
