@@ -512,27 +512,142 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 
 ---
 
-## Task 5: psyduck OpenClaw Tool Registration (TBD)
+## Task 5: psyduck OpenClaw Skill — `psyboard` Tool
 
-**This task requires further investigation of OpenClaw's skill/plugin system.**
+**Files:**
+- Create: `/Users/shumanliu/Downloads/workspace-psyduck/skills/psyboard/SKILL.md`
 
-What needs to happen:
-- Register 6 psyduck tools in the main session, built dynamically from `GET /api/schema`:
-  - `psyboard_query` — query tasks by column, dueBy, doBy, assignee, priority, search, includeDone
-  - `psyboard_create_task` — create task with all fields
-  - `psyboard_update_task` — update/move/complete task
-  - `psyboard_delete_task` — delete task
-  - `psyboard_create_column` — create column
-  - `psyboard_ha_sensors` — HA live sensor data (on-demand)
+OpenClaw skills are **prompt-based** — they teach the LLM to use existing tools (like `exec` + `curl`), not code plugins. The skill file goes in the psyduck workspace at `skills/psyboard/SKILL.md`.
 
-- Main session startup behavior:
-  1. Fetch `GET /http://localhost:3001/api/schema` → build tool definitions
-  2. Connect SSE to `GET /http://localhost:3001/api/events` → listen for `schema_updated`
-  3. On `schema_updated` → refetch schema → rebuild tools
+- [ ] **Step 1: Create skill directory and SKILL.md**
 
-The tool definitions should be constructed from the `endpoints` and `columns` returned by `GET /api/schema`, with parameters derived from `taskFields`.
+```bash
+mkdir -p /Users/shumanliu/Downloads/workspace-psyduck/skills/psyboard
+```
 
-This likely requires creating an OpenClaw skill in the psyduck workspace. Investigate OpenClaw skill format before implementing.
+Create `/Users/shumanliu/Downloads/workspace-psyduck/skills/psyboard/SKILL.md`:
+
+```markdown
+---
+name: psyboard
+description: "Interact with the psyboard Kanban app — query, create, update, delete tasks and columns. Use when user wants to know, add, or manage tasks."
+---
+
+# psyboard Skill
+
+psyboard is the household task management board. It owns all task data, recurrence, due dates, and columns.
+
+**Base URL:** `http://localhost:3001/api`
+
+---
+
+## Board Schema
+
+At the START of EVERY session (before doing anything else), fetch the current board schema:
+
+```
+exec → curl -s http://localhost:3001/api/schema
+```
+
+Store the columns list. Use it to match column titles to IDs. If you encounter a column title you haven't seen, refetch the schema.
+
+---
+
+## Available Tools
+
+Use `exec` with `curl` for all psyboard operations.
+
+### Query tasks
+```
+curl -s "http://localhost:3001/api/board" | jq '.tasks[] | select(.columnId == "COLUMN_ID")'
+```
+Parameters for filtering:
+- `column`: match by `columnId` from schema
+- `dueBy=YYYY-MM-DD`: tasks with `dueDate <= value`
+- `doBy=YYYY-MM-DD`: tasks with `doDate <= value`
+- `assignee`: "SL" or "KL"
+- `priority`: "high", "medium", "low"
+- `search`: free-text against `.title`
+- `includeDone`: include tasks in Done column (default: exclude)
+
+### Create a task
+```
+curl -s -X POST http://localhost:3001/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title":"TASK_TITLE","columnId":"COLUMN_ID",...}'
+```
+
+### Update a task
+```
+curl -s -X PATCH "http://localhost:3001/api/tasks/TASK_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"...", "columnId":"...", "completedAt":"ISO_DATE"}'
+```
+
+### Delete a task
+```
+curl -s -X DELETE "http://localhost:3001/api/tasks/TASK_ID"
+```
+
+### Create a column
+```
+curl -s -X POST http://localhost:3001/api/columns \
+  -H "Content-Type: application/json" \
+  -d '{"title":"COLUMN_TITLE"}'
+```
+
+### HA sensors (on-demand only — when user asks about a specific device)
+```
+curl -s http://localhost:3001/api/ha/sensors
+```
+
+---
+
+## Column Inference (when creating tasks)
+
+When user says "remind me to...", "add...", "I need to...":
+
+| Signal | Column |
+|--------|--------|
+| "today", "morning", "before work" | Today |
+| "this week", "someday", no time cue | Backlog |
+| "appointment", "dentist", "vet", "doctor" | Appointments |
+| "shopping", "buy", "grocery" | Shopping |
+| Due date = today | Today |
+
+Always confirm: "I'll add '[task]' to [column]. Sound right?"
+
+---
+
+## Completing Tasks
+
+When user says "done", "I finished", "completed":
+1. Find matching task on the board
+2. Confirm: "Shall I mark '[task]' as done?"
+3. `PATCH /api/tasks/:id` with `completedAt` set to current ISO datetime
+
+---
+
+## Schema Refresh
+
+If you encounter a column title you don't recognize, fetch the schema:
+```
+exec → curl -s http://localhost:3001/api/schema
+```
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add skills/psyboard/SKILL.md
+git commit -m "feat(skill): add psyboard skill for psyduck
+
+Skill teaches psyduck to use exec+curl to call psyboard API.
+Covers: query tasks, create/update/delete tasks and columns,
+HA sensors, column inference, and completion flow.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+```
 
 ---
 
@@ -546,10 +661,10 @@ This likely requires creating an OpenClaw skill in the psyduck workspace. Invest
 - ✅ Cron job `state-prep-household-morning` deleted — Task 4
 - ✅ Morning reminder updated — Task 4
 - ✅ Evening reminder updated — Task 4
-- ⚠️ psyduck tool registration — Task 5 (TBD — OpenClaw skill investigation needed)
+- ✅ psyduck OpenClaw skill — Task 5 (OpenClaw skill format confirmed via docs — skill-based, uses exec+curl)
 
 **Placeholder scan:** No TBD/TODOs in code steps. All test code is complete. All file paths are exact.
 
 **Type consistency:** `broadcastSchemaUpdated` is exported from `events.ts` and imported in `columns.ts` — consistent. `haClient.getAllStates` and `loadHAEnv` are already exported from existing modules — consistent.
 
-**Gaps found:** None in psyboard tasks. psyduck task (Task 5) needs OpenClaw skill format research.
+**Gaps found:** None.
