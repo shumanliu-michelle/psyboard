@@ -8,7 +8,7 @@ vi.mock('../config.js', () => ({
   loadHAConfig: vi.fn(),
 }))
 
-import { startScheduler, stopScheduler, getActiveTimers } from '../scheduler.js'
+import { startScheduler, stopScheduler, getActiveTimers } from '../haConnection.js'
 import { createHAWebSocket } from '../haWebSocket.js'
 import { loadHAConfig } from '../config.js'
 

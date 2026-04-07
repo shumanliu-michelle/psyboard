@@ -17,7 +17,7 @@ vi.mock('../routes/events.js', () => ({
   broadcast: vi.fn(),
 }))
 
-import { startScheduler, stopScheduler, getActiveTimers } from '../home-assistant/scheduler.js'
+import { startScheduler, stopScheduler, getActiveTimers } from '../home-assistant/haConnection.js'
 import { loadHAConfig } from '../home-assistant/config.js'
 import { createHAWebSocket } from '../home-assistant/haWebSocket.js'
 

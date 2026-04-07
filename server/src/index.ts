@@ -5,7 +5,7 @@ import tasksRouter from './routes/tasks.js'
 import homeAssistantRouter from './home-assistant/index.js'
 import eventsRouter from './routes/events.js'
 import backupRouter from './routes/backup.js'
-import { startScheduler } from './home-assistant/scheduler.js'
+import { startScheduler } from './home-assistant/haConnection.js'
 import { startBackupScheduler } from './backup.js'
 
 export const app = express()
