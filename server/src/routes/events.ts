@@ -35,6 +35,26 @@ export function broadcast(sourceTabId?: string, summary?: BroadcastSummary): voi
   }
 }
 
+export function broadcastSchemaUpdated(): void {
+  const payload = JSON.stringify({ type: 'schema_updated' })
+  const message = `data: ${payload}\n\n`
+  console.log(`[SSE] Broadcasting schema_updated to ${clients.size} client(s)`)
+
+  const deadClients: express.Response[] = []
+
+  for (const [client] of clients) {
+    try {
+      client.write(message)
+    } catch {
+      deadClients.push(client)
+    }
+  }
+
+  for (const dead of deadClients) {
+    clients.delete(dead)
+  }
+}
+
 router.get('/', (req, res) => {
   // SSE headers
   res.setHeader('Content-Type', 'text/event-stream')
