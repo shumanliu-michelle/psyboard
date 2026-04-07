@@ -1,6 +1,5 @@
 {
   "defaultColumn": "Today",
-  "pollIntervalMinutes": 5,
   "alerts": [
     {
       "entityId": "sensor.absol_waste_drawer",

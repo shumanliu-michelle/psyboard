@@ -10,7 +10,6 @@ const JSON_FILE = path.join(CONFIG_DIR, 'home-assistant.json')
 
 export type HAConfig = {
   defaultColumn: string
-  pollIntervalMinutes?: number  // global default poll interval in minutes; default is 5
   alerts: AlertRule[]
 }
 

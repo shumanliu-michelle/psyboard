@@ -39,7 +39,6 @@ describe('HA Scheduler — WebSocket mode', () => {
   it('starts a single WebSocket client and connects', () => {
     const mockConfig = {
       defaultColumn: 'Today',
-      pollIntervalMinutes: 5, // should be ignored in WS mode
       alerts: [{ entityId: 'sensor.foo', condition: { type: 'isOn' }, taskTitle: 'Foo', priority: 'high' as const }],
     }
     vi.mocked(loadHAConfig).mockReturnValue(mockConfig)

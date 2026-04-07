@@ -12,7 +12,6 @@ export type AlertRule = {
   condition: AlertCondition
   taskTitle?: string  // optional when using stateToTitle (title comes from mapping)
   priority: 'high' | 'medium'
-  pollIntervalMinutes?: number  // per-alert override; falls back to config default
 }
 
 export type TriggeredAlert = {
