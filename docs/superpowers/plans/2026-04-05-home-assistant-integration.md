@@ -91,8 +91,25 @@ Create `server/config/ha/home-assistant.json`:
     },
     {
       "entityId": "sensor.absol_status_code",
-      "condition": { "type": "notEquals", "value": "rdy" },
-      "taskTitle": "Check Absol's status",
+      "condition": {
+        "type": "stateToTitle",
+        "mapping": {
+          "off": "Check litter robot: Off",
+          "offline": "Check litter robot: Offline",
+          "csf": "Check litter robot: Cat Sensor Fault",
+          "df1": "Empty Absol's litter box (2 cycles left)",
+          "df2": "Empty Absol's litter box (1 cycle left)",
+          "dfs": "Empty Absol's litter box NOW! (full)",
+          "dhf": "Check litter robot: Dump + Home Position Fault",
+          "dpf": "Check litter robot: Dump Position Fault",
+          "hpf": "Check litter robot: Home Position Fault",
+          "otf": "Check litter robot: Over Torque Fault",
+          "pd": "Check litter robot: Pinch Detect",
+          "scf": "Check litter robot: Cat Sensor Fault At Startup",
+          "sdf": "Empty litter robot: Drawer Full At Startup",
+          "spf": "Check litter robot: Pinch Detect At Startup"
+        }
+      },
       "priority": "high"
     },
     {

@@ -5,7 +5,7 @@
     {
       "entityId": "sensor.absol_waste_drawer",
       "condition": { "type": "numericAbove", "threshold": 80 },
-      "taskTitle": "Empty Absol's litter box",
+      "taskTitle": "‼️ Empty Absol's litter box",
       "priority": "high"
     },
     {
@@ -22,8 +22,25 @@
     },
     {
       "entityId": "sensor.absol_status_code",
-      "condition": { "type": "notEquals", "value": "rdy" },
-      "taskTitle": "Check litter robot status",
+      "condition": {
+        "type": "stateToTitle",
+        "mapping": {
+          "off": "Check litter robot: Off",
+          "offline": "Check litter robot: Offline",
+          "csf": "Check litter robot: Cat Sensor Fault",
+          "df1": "‼️ Empty Absol's litter box (2 cycles left)",
+          "df2": "‼️ Empty Absol's litter box (1 cycle left)",
+          "dfs": "‼️ Empty Absol's litter box NOW! (full)",
+          "dhf": "Check litter robot: Dump + Home Position Fault",
+          "dpf": "Check litter robot: Dump Position Fault",
+          "hpf": "Check litter robot: Home Position Fault",
+          "otf": "Check litter robot: Over Torque Fault",
+          "pd": "Check litter robot: Pinch Detect",
+          "scf": "Check litter robot: Cat Sensor Fault At Startup",
+          "sdf": "Empty litter robot: Drawer Full At Startup",
+          "spf": "Check litter robot: Pinch Detect At Startup"
+        }
+      },
       "priority": "high"
     },
     {
@@ -35,13 +52,13 @@
     {
       "entityId": "binary_sensor.vz385114n_laundry_end_of_cycle",
       "condition": { "type": "isOn" },
-      "taskTitle": "Washer done - move to dryer",
+      "taskTitle": "Washer done - move to dryer 🧺",
       "priority": "medium"
     },
     {
       "entityId": "binary_sensor.va101371g_laundry_end_of_cycle",
       "condition": { "type": "isOn" },
-      "taskTitle": "Dryer done - fold clothes",
+      "taskTitle": "Dryer done - fold clothes 🧺",
       "priority": "medium"
     },
     {
