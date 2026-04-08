@@ -78,9 +78,9 @@ export const api = {
     columnIdOp?: 'eq' | 'ne'
     completedAtOp?: 'lt' | 'gte'
     completedAt?: string
-    dueDateOp?: 'eq' | 'gte' | 'lte' | 'lt'
+    dueDateOp?: 'eq' | 'gte' | 'lte' | 'lt' | 'gt'
     dueDate?: string
-    doDateOp?: 'eq' | 'gte' | 'lt'
+    doDateOp?: 'eq' | 'gte' | 'lt' | 'gt'
     doDate?: string
     priority?: string
     assignee?: string

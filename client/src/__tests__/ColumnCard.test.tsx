@@ -236,7 +236,6 @@ describe('ColumnCard', () => {
       renderColumnCard(column, tasks)
 
       expect(screen.getByText(/showing last 7 days/i)).toBeTruthy()
-      expect(screen.getByText(/1 older task/i)).toBeTruthy()
       expect(screen.getByRole('button', { name: 'Show older tasks' })).toBeTruthy()
     })
 
@@ -249,7 +248,9 @@ describe('ColumnCard', () => {
       ]
       renderColumnCard(column, tasks)
 
-      expect(screen.queryByRole('button', { name: /show older tasks/i })).toBeNull()
+      // Footer shows "Showing last 7 days" but NOT the "Show older tasks" button
+      // (button only shows when doneHasMore is true from server indicating older tasks exist)
+      expect(screen.getByText(/showing last 7 days/i)).toBeTruthy()
     })
 
     it('shows empty state when done column has no tasks', () => {

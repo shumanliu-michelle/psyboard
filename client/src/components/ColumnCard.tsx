@@ -91,9 +91,14 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         completedAt: oldestCompletedAt,
         limit: 50,
       })
-      setOlderDoneTasks(olderTasks)
       setDoneHasMore(hasMore)
-      setDonePage(p => p + 1)
+      // Only advance to page 1 if we actually got older tasks
+      // If olderTasks is empty (no more tasks beyond the 7-day window),
+      // keep showing page 0 so the Done column doesn't clear
+      if (olderTasks.length > 0) {
+        setOlderDoneTasks(olderTasks)
+        setDonePage(p => p + 1)
+      }
     } catch {
       // silently fail
     }

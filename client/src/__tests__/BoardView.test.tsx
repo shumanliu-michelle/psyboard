@@ -12,6 +12,7 @@ vi.mock('@dnd-kit/core', () => ({
   DragOverlay: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   SortableContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   PointerSensor: vi.fn(),
+  TouchSensor: vi.fn(),
   useSensor: vi.fn(() => ({})),
   useSensors: vi.fn(() => []),
   useDroppable: vi.fn(() => ({ setNodeRef: vi.fn(), isOver: false })),
