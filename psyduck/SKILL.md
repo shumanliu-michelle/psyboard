@@ -35,55 +35,59 @@ exec curl -s http://localhost:3001/api/board | jq '.tasks'
 ### `GET /api/tasks` — Targeted Task Queries
 Use for: answering specific questions about tasks (due today, tomorrow, high priority, etc.). Returns `{ tasks: [...], hasMore: boolean }` — only the matching tasks.
 
-**Query params format:** `field=operator:value`
+**Query params format:** `field=operator=value`
 - Operators: `eq` (equals, default), `ne` (not equals), `gte` (on or after), `gt` (after), `lte` (on or before), `lt` (before), `cont` (contains, case-insensitive)
-- For bare `field=value`, defaults to `eq` operator
+- Bare `field=value` defaults to `eq` operator
 - `limit=N` — max results (default 50, max 200)
 - `offset=N` — pagination offset
 - `sortBy=dueDate|doDate|completedAt|order|priority|createdAt`
 - `sortDir=asc|desc`
 
-**Common queries:**
+**Common queries (replace YYYY-MM-DD with today's date dynamically):**
 
-What's on my plate today (tasks due today, not done):
+Tasks due today (not done):
 ```
-exec curl -s "http://localhost:3001/api/tasks?columnId=ne:col-done&dueDate=gte:2026-04-07&dueDate=lte:2026-04-07" | jq '.tasks'
+exec curl -s "http://localhost:3001/api/tasks?columnId=ne=col-done&dueDateOp=gte&dueDate=YYYY-MM-DD&dueDateOp=lte&dueDate=YYYY-MM-DD" | jq '.tasks'
 ```
 
 Tasks due tomorrow:
 ```
-exec curl -s "http://localhost:3001/api/tasks?columnId=ne:col-done&dueDate=eq:2026-04-08" | jq '.tasks'
+exec curl -s "http://localhost:3001/api/tasks?columnId=ne=col-done&dueDate=YYYY-MM-DD" | jq '.tasks'
 ```
 
 High priority tasks not done:
 ```
-exec curl -s "http://localhost:3001/api/tasks?columnId=ne:col-done&priority=eq:high" | jq '.tasks'
+exec curl -s "http://localhost:3001/api/tasks?columnId=ne=col-done&priority=high" | jq '.tasks'
 ```
 
 Tasks assigned to KL:
 ```
-exec curl -s "http://localhost:3001/api/tasks?columnId=ne:col-done&assignee=eq:KL" | jq '.tasks'
+exec curl -s "http://localhost:3001/api/tasks?columnId=ne=col-done&assignee=eq=KL" | jq '.tasks'
 ```
 
 Tasks containing keyword (e.g. "vacuum"):
 ```
-exec curl -s "http://localhost:3001/api/tasks?title=cont:vacuum" | jq '.tasks'
+exec curl -s "http://localhost:3001/api/tasks?title=cont=vacuum" | jq '.tasks'
 ```
 
 Tasks in a specific column (e.g. Today):
 ```
-exec curl -s "http://localhost:3001/api/tasks?columnId=eq:col-today" | jq '.tasks'
-```
-
-Load older Done tasks (pagination — most recent first):
-```
-# Replace <OLDEST_COMPLETED_AT> with the completedAt of the oldest currently visible Done task (ISO format)
-exec curl -s "http://localhost:3001/api/tasks?columnId=eq:col-done&completedAt=lt:<OLDEST_COMPLETED_AT>" | jq '.tasks'
+exec curl -s "http://localhost:3001/api/tasks?columnId=eq=col-today" | jq '.tasks'
 ```
 
 Tasks do-date today or past due (things to work on today):
 ```
-exec curl -s "http://localhost:3001/api/tasks?columnId=ne:col-done&doDate=lte:2026-04-07" | jq '.tasks'
+exec curl -s "http://localhost:3001/api/tasks?columnId=ne=col-done&doDateOp=lte&doDate=YYYY-MM-DD" | jq '.tasks'
+```
+
+Tasks in Appointments column due today:
+```
+exec curl -s "http://localhost:3001/api/tasks?columnId=eq=col-appointments&dueDate=YYYY-MM-DD" | jq '.tasks'
+```
+
+Done tasks (most recent first, filtered to last 7 days):
+```
+exec curl -s "http://localhost:3001/api/tasks?columnId=eq=col-done&sortBy=completedAt&sortDir=desc" | jq '.tasks'
 ```
 
 **Response format:**
