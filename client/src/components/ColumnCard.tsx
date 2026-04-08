@@ -74,9 +74,6 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
     ? allDoneTasks.filter(t => getCompletedAtDaysAgo(t.completedAt!) < (donePage + 1) * DONE_PAGE_DAYS)
     : []
 
-  // Older done tasks not yet visible
-  const olderDoneTasksCount = isDoneColumn ? Math.max(0, allDoneTasks.length - visibleDoneTasks.length) : 0
-
   const renderedTasks = isDoneColumn
     ? donePage === 0
       ? visibleDoneTasks
@@ -270,7 +267,9 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
       </div>
 
       {/* Done column pagination footer */}
-      {isDoneColumn && (donePage === 0 ? olderDoneTasksCount > 0 : olderDoneTasks.length > 0 || doneHasMore) && (
+      {isDoneColumn && (donePage === 0
+          ? tasks.length > 0  // show if Done has any tasks (server filtered to last 7 days, so older may exist)
+          : olderDoneTasks.length > 0 || doneHasMore) && (
         <div style={{
           padding: '10px 12px',
           borderTop: '1px solid #e5e7eb',
@@ -278,7 +277,7 @@ export function ColumnCard({ column, tasks, onRefresh, onOpenDrawer }: ColumnCar
         }}>
           <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>
             {donePage === 0
-              ? `Showing last ${DONE_PAGE_DAYS} days · ${olderDoneTasksCount} older`
+              ? `Showing last ${DONE_PAGE_DAYS} days`
               : `${olderDoneTasks.length} loaded · ${doneHasMore ? 'more available' : 'no older tasks'}`}
           </div>
           {donePage === 0 || doneHasMore ? (
