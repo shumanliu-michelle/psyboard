@@ -93,19 +93,19 @@ export const api = {
     const searchParams = new URLSearchParams()
     if (params.columnId) {
       searchParams.set('columnId', params.columnId)
-      if (params.columnIdOp && params.columnIdOp !== 'eq') searchParams.set('columnIdOp', params.columnIdOp)
+      if (params.columnIdOp) searchParams.set('columnIdOp', params.columnIdOp)
     }
     if (params.completedAt) {
       searchParams.set('completedAt', params.completedAt)
-      if (params.completedAtOp && params.completedAtOp !== 'lt') searchParams.set('completedAtOp', params.completedAtOp)
+      if (params.completedAtOp) searchParams.set('completedAtOp', params.completedAtOp)
     }
     if (params.dueDate) {
       searchParams.set('dueDate', params.dueDate)
-      if (params.dueDateOp && params.dueDateOp !== 'eq') searchParams.set('dueDateOp', params.dueDateOp)
+      if (params.dueDateOp) searchParams.set('dueDateOp', params.dueDateOp)
     }
     if (params.doDate) {
       searchParams.set('doDate', params.doDate)
-      if (params.doDateOp && params.doDateOp !== 'eq') searchParams.set('doDateOp', params.doDateOp)
+      if (params.doDateOp) searchParams.set('doDateOp', params.doDateOp)
     }
     if (params.priority) searchParams.set('priority', params.priority)
     if (params.assignee) searchParams.set('assignee', params.assignee)

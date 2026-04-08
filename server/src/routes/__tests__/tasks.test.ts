@@ -132,7 +132,8 @@ describe('GET /api/tasks', () => {
     ]
     writeBoard(createTestBoard(tasks))
     const before10d = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString()
-    const res = await request(app).get(`/api/tasks?columnId=eq:col-done&completedAt=lt:${encodeURIComponent(before10d)}`)
+    // New format: separate field and Op params (as sent by api.queryTasks)
+    const res = await request(app).get(`/api/tasks?columnId=col-done&columnIdOp=eq&completedAt=${encodeURIComponent(before10d)}&completedAtOp=lt`)
     expect(res.status).toBe(200)
     const ids = res.body.tasks.map((t: Task) => t.id)
     expect(ids).toContain('t-15d')
