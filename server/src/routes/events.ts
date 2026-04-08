@@ -1,6 +1,6 @@
 import express from 'express'
 import { Router } from 'express'
-import type { Task } from '../../types.js'
+import type { Task } from '../types.js'
 
 const router = Router()
 

@@ -92,24 +92,24 @@ export const api = {
   }) => {
     const searchParams = new URLSearchParams()
     if (params.columnId) {
-      const op = params.columnIdOp || 'eq'
-      searchParams.set(`columnId=${op}`, params.columnId)
+      searchParams.set('columnId', params.columnId)
+      if (params.columnIdOp && params.columnIdOp !== 'eq') searchParams.set('columnIdOp', params.columnIdOp)
     }
     if (params.completedAt) {
-      const op = params.completedAtOp || 'lt'
-      searchParams.set(`completedAt=${op}`, params.completedAt)
+      searchParams.set('completedAt', params.completedAt)
+      if (params.completedAtOp && params.completedAtOp !== 'lt') searchParams.set('completedAtOp', params.completedAtOp)
     }
     if (params.dueDate) {
-      const op = params.dueDateOp || 'eq'
-      searchParams.set(`dueDate=${op}`, params.dueDate)
+      searchParams.set('dueDate', params.dueDate)
+      if (params.dueDateOp && params.dueDateOp !== 'eq') searchParams.set('dueDateOp', params.dueDateOp)
     }
     if (params.doDate) {
-      const op = params.doDateOp || 'eq'
-      searchParams.set(`doDate=${op}`, params.doDate)
+      searchParams.set('doDate', params.doDate)
+      if (params.doDateOp && params.doDateOp !== 'eq') searchParams.set('doDateOp', params.doDateOp)
     }
-    if (params.priority) searchParams.set('priority=eq', params.priority)
-    if (params.assignee) searchParams.set('assignee=eq', params.assignee)
-    if (params.titleCont) searchParams.set('title=cont', params.titleCont)
+    if (params.priority) searchParams.set('priority', params.priority)
+    if (params.assignee) searchParams.set('assignee', params.assignee)
+    if (params.titleCont) searchParams.set('title', params.titleCont)
     if (params.limit !== undefined) searchParams.set('limit', String(params.limit))
     if (params.offset !== undefined) searchParams.set('offset', String(params.offset))
     if (params.sortBy) searchParams.set('sortBy', params.sortBy)

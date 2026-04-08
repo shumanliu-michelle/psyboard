@@ -127,14 +127,19 @@ export function createHAWebSocket(): HAWSClient {
   function connect(): void {
     if (ws) return
 
-    const env = loadHAEnv()
-    const wsUrl = `${env.HOME_ASSISTANT_URL.replace('http', 'ws')}/api/websocket`
+    let wsUrl: string
+    try {
+      const env = loadHAEnv()
+      wsUrl = `${env.HOME_ASSISTANT_URL.replace('http', 'ws')}/api/websocket`
+    } catch (err) {
+      console.warn(`[HA WS] Not connecting — HA not configured: ${(err as Error).message}`)
+      return
+    }
 
     ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
       console.log('[HA WS] Connected, waiting for auth_required...')
-      // Wait for auth_required from server before sending auth
     }
 
     ws.onmessage = (event) => {

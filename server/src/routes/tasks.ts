@@ -57,18 +57,39 @@ const MAX_LIMIT = 200
 type TaskFilter = (task: Task) => boolean
 
 function parseFilterParam(raw: string): { field: string; operator: string; value: string } {
-  // Input format: field=operator:value or field=value (defaults to eq)
-  // Split on first '=' to separate field from operator:value
+  // Two formats supported:
+  // 1. Old: field=operator:value (e.g. "title=cont:searchterm", "columnId=eq:col-backlog")
+  //    Separator is ':', value may contain '=' (e.g. timestamps like "2026-04-06T05:00:00.000Z")
+  // 2. New: field=operator=value (e.g. "columnId=eq=col-done")
+  //    Separator is '=', value may contain ':' (ISO timestamps)
+  //
+  // Detection: if ':' appears in rest AND (no '=' in rest OR ':' comes before first '='), use ':' as separator.
+  // Otherwise use '=' as separator.
   const equalsIdx = raw.indexOf('=')
   if (equalsIdx === -1) return { field: raw, operator: 'eq', value: '' }
   const field = raw.slice(0, equalsIdx)
   const rest = raw.slice(equalsIdx + 1)
-  // rest is 'operator:value' or just 'value'
+
   const colonIdx = rest.indexOf(':')
-  if (colonIdx === -1) return { field, operator: 'eq', value: rest }
-  const operator = rest.slice(0, colonIdx)
-  const value = rest.slice(colonIdx + 1)
-  return { field, operator, value }
+  const secondEqualsIdx = rest.indexOf('=')
+
+  // Use ':' as separator (old format) if:
+  // - ':' exists AND (no '=' in rest OR ':' comes before first '=' in rest)
+  if (colonIdx !== -1 && (secondEqualsIdx === -1 || colonIdx < secondEqualsIdx)) {
+    const operator = rest.slice(0, colonIdx)
+    const value = rest.slice(colonIdx + 1)
+    return { field, operator, value }
+  }
+
+  // Use '=' as separator (new format) if '=' exists in rest
+  if (secondEqualsIdx !== -1) {
+    const operator = rest.slice(0, secondEqualsIdx)
+    const value = rest.slice(secondEqualsIdx + 1)
+    return { field, operator, value }
+  }
+
+  // No separator — bare value with default 'eq' operator
+  return { field, operator: 'eq', value: rest }
 }
 
 function buildTaskFilter(field: string, operator: string, rawValue: string): TaskFilter | null {
@@ -115,18 +136,66 @@ function buildTaskFilter(field: string, operator: string, rawValue: string): Tas
 router.get('/', (req, res) => {
   const { limit: limitStr, offset: offsetStr, sortBy, sortDir } = req.query as Record<string, string>
 
-  // Collect filters from all query params except limit/offset/sortBy/sortDir
+  // Collect *Op params (e.g. completedAtOp=lt) for bare field operators
+  const opParams: Record<string, string> = {}
+  for (const [key, val] of Object.entries(req.query)) {
+    if (key.endsWith('Op') && typeof val === 'string') {
+      opParams[key] = val
+    }
+  }
+
+  // Collect filters from all query params except limit/offset/sortBy/sortDir and *Op params
   const filters: TaskFilter[] = []
   const metaParams = new Set(['limit', 'offset', 'sortBy', 'sortDir'])
 
   for (const [key, rawVal] of Object.entries(req.query)) {
     if (metaParams.has(key)) continue
+    if (key.endsWith('Op')) continue  // skip *Op params, handled via opParams lookup
     // Handle array values from duplicate query params (e.g., dueDate=gte:...&dueDate=lte:...)
     const rawVals = Array.isArray(rawVal) ? rawVal : [rawVal]
     for (const rv of rawVals) {
       if (typeof rv !== 'string') continue
-      const { field, operator, value } = parseFilterParam(`${key}=${rv}`)
+
+      const { field, operator: embeddedOp, value: parsedValue } = parseFilterParam(key)
       if (metaParams.has(field)) continue
+      if (!field) continue
+
+      let operator: string
+      let value: string
+
+      if (key !== field) {
+        // Composite format: key is "field=operator" or "field=operator=value" (embedded operator)
+        // value is in rv (from URLSearchParams)
+        operator = embeddedOp
+        value = rv
+      } else {
+        // Bare field: key is just "field", value is in rv
+        // Look up operator from *Op param (e.g. completedAtOp=lt) if provided
+        const opKey = field + 'Op'
+        const explicitOp = opParams[opKey]
+        if (explicitOp) {
+          operator = explicitOp
+          value = rv
+        } else if (rv !== undefined) {
+          // Check if rv is "operator:value" (old format like "eq:col-backlog")
+          // Only use ":" as separator if rawVal actually contains ":"
+          const colonIdx = rv.indexOf(':')
+
+          if (colonIdx !== -1) {
+            // ":" in rawVal — old format: operator:value
+            operator = rv.slice(0, colonIdx)
+            value = rv.slice(colonIdx + 1)
+          } else {
+            // No ":" in rawVal — bare value (could be timestamp or plain value)
+            operator = field === 'title' ? 'cont' : 'eq'
+            value = rv
+          }
+        } else {
+          operator = embeddedOp
+          value = rv
+        }
+      }
+
       if (!value) continue
 
       // Validate date fields
