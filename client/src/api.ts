@@ -72,4 +72,49 @@ export const api = {
 
   backup: () =>
     request<{ backup: string }>('/backup', { method: 'POST' }),
+
+  queryTasks: (params: {
+    columnId?: string
+    columnIdOp?: 'eq' | 'ne'
+    completedAtOp?: 'lt' | 'gte'
+    completedAt?: string
+    dueDateOp?: 'eq' | 'gte' | 'lte' | 'lt' | 'gt'
+    dueDate?: string
+    doDateOp?: 'eq' | 'gte' | 'lt' | 'gt'
+    doDate?: string
+    priority?: string
+    assignee?: string
+    titleCont?: string
+    limit?: number
+    offset?: number
+    sortBy?: 'dueDate' | 'doDate' | 'completedAt' | 'order' | 'priority' | 'createdAt'
+    sortDir?: 'asc' | 'desc'
+  }) => {
+    const searchParams = new URLSearchParams()
+    if (params.columnId) {
+      searchParams.set('columnId', params.columnId)
+      if (params.columnIdOp) searchParams.set('columnIdOp', params.columnIdOp)
+    }
+    if (params.completedAt) {
+      searchParams.set('completedAt', params.completedAt)
+      if (params.completedAtOp) searchParams.set('completedAtOp', params.completedAtOp)
+    }
+    if (params.dueDate) {
+      searchParams.set('dueDate', params.dueDate)
+      if (params.dueDateOp) searchParams.set('dueDateOp', params.dueDateOp)
+    }
+    if (params.doDate) {
+      searchParams.set('doDate', params.doDate)
+      if (params.doDateOp) searchParams.set('doDateOp', params.doDateOp)
+    }
+    if (params.priority) searchParams.set('priority', params.priority)
+    if (params.assignee) searchParams.set('assignee', params.assignee)
+    if (params.titleCont) searchParams.set('title', params.titleCont)
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit))
+    if (params.offset !== undefined) searchParams.set('offset', String(params.offset))
+    if (params.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params.sortDir) searchParams.set('sortDir', params.sortDir)
+
+    return request<{ tasks: Task[]; hasMore: boolean }>(`/tasks?${searchParams.toString()}`)
+  },
 }

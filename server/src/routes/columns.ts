@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { createColumn, deleteColumn, readBoard, updateColumn, reorderColumns } from '../store/boardStore.js'
+import { broadcastSchemaUpdated } from './events.js'
 
 const router = Router()
 
@@ -19,6 +20,7 @@ router.post('/', (req, res) => {
   try {
     const column = createColumn(title.trim(), accent)
     res.status(201).json(column)
+    broadcastSchemaUpdated()
   } catch (err: unknown) {
     if (err instanceof Error) {
       if (err.message === 'Cannot create column with a reserved name') {
@@ -50,6 +52,7 @@ router.delete('/:id', (req, res) => {
 
     deleteColumn(id)
     res.status(204).send()
+    broadcastSchemaUpdated()
   } catch (err: unknown) {
     if (err instanceof Error) {
       if (err.message === 'Cannot delete system column') {
@@ -87,6 +90,7 @@ router.patch('/:id', (req, res) => {
   try {
     const column = updateColumn(id, updates)
     res.json(column)
+    broadcastSchemaUpdated()
   } catch (err: unknown) {
     if (err instanceof Error) {
       if (err.message === 'Column not found') {
@@ -124,7 +128,11 @@ router.post('/reorder', (req, res) => {
   try {
     const columns = reorderColumns(columnIds)
     res.json({ columns })
-  } catch (err) {
+    broadcastSchemaUpdated()
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      // handle specific errors if needed
+    }
     res.status(500).json({ error: 'Failed to reorder columns' })
   }
 })

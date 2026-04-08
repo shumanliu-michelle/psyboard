@@ -31,8 +31,10 @@ function advanceOneStep(dateStr: string, kind: RecurrenceKind, config: Recurrenc
       return base.toISOString().slice(0, 10)
     }
     case 'weekdays': {
-      do { base.setUTCDate(base.getUTCDate() + 1) }
-      while (base.getUTCDay() === 0 || base.getUTCDay() === 6)
+      base.setUTCDate(base.getUTCDate() + 1)
+      while (base.getUTCDay() === 0 || base.getUTCDay() === 6) {
+        base.setUTCDate(base.getUTCDate() + 1)
+      }
       return base.toISOString().slice(0, 10)
     }
     case 'cron': {
@@ -74,12 +76,36 @@ export function computeNextDate(
 
   let next = advanceOneStep(baseDate, kind, config)
 
-  // For fixed recurrence, if the next date is in the past (or today), keep
-  // advancing until we find a strictly future date. This prevents overdue
-  // next occurrences when a scheduled task is completed late (e.g. monthly on
-  // day 1, completed May 15 -> next is June 1, not May 1).
+  // For fixed recurrence, skip past-due occurrences.
+  // If next landed exactly on today: advance to avoid same-day duplicate
+  // UNLESS the task was overdue before completion (baseDate < today).
+  // For overdue tasks, same-day is a valid next occurrence.
   if (!isCompletionBased) {
-    while (next && next <= today) {
+    while (true) {
+      const nextMs = next ? new Date(next + 'T00:00:00Z').getTime() : 0
+      const todayMs = new Date(today + 'T00:00:00Z').getTime()
+      // For interval_days, today is a valid next occurrence only when the task
+      // was due TODAY (baseDate === today). If the task is overdue (baseDate < today),
+      // today in the sequence means it was skipped due to lateness — advance.
+      const isIntervalKind = kind === 'interval_days'
+      // overdue means baseDate < today (task was due before today)
+      // For interval_days: today is a valid occurrence when overdue
+      // For other kinds: always advance past today
+      const overdue = isIntervalKind && baseDate < today
+      const overdueNonInterval = !isIntervalKind && baseDate < today
+      if (nextMs > todayMs) break
+      if (nextMs === todayMs && !overdue && !overdueNonInterval && kind !== 'weekdays') break
+      // For weekdays, today is never valid — always advance.
+      const shouldAdvance = kind === 'weekdays' || nextMs <= todayMs
+      if (!shouldAdvance) break
+      const advanced = advanceOneStep(next, kind, config)
+      if (!advanced) { next = null; break }
+      next = advanced
+    }
+    // Same-day skip: for daily/weekly/monthly, on-time same-day completion means
+    // skip to avoid duplicate on the same day. For interval_days, same-day IS valid
+    // (e.g., every 3 days — today April 8 is a valid occurrence after done April 8).
+    if (next && next === today && baseDate === today && kind !== 'interval_days') {
       next = advanceOneStep(next, kind, config)
     }
   }

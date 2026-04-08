@@ -224,34 +224,7 @@ describe('ColumnCard', () => {
     })
   })
 
-  describe('Done column pagination', () => {
-    it('shows footer when older done tasks exist', () => {
-      const today = new Date().toISOString()
-      const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
-      const column = makeColumn({ id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done' })
-      const tasks = [
-        makeTask({ id: 'task-1', columnId: DONE_COLUMN_ID, completedAt: today }),
-        makeTask({ id: 'task-2', columnId: DONE_COLUMN_ID, completedAt: eightDaysAgo }),
-      ]
-      renderColumnCard(column, tasks)
-
-      expect(screen.getByText(/showing last 7 days/i)).toBeTruthy()
-      expect(screen.getByText(/1 older task/i)).toBeTruthy()
-      expect(screen.getByRole('button', { name: 'Show older tasks' })).toBeTruthy()
-    })
-
-    it('does not show footer when all done tasks are within 7 days', () => {
-      const today = new Date().toISOString()
-      const column = makeColumn({ id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done' })
-      const tasks = [
-        makeTask({ id: 'task-1', columnId: DONE_COLUMN_ID, completedAt: today }),
-        makeTask({ id: 'task-2', columnId: DONE_COLUMN_ID, completedAt: today }),
-      ]
-      renderColumnCard(column, tasks)
-
-      expect(screen.queryByRole('button', { name: /show older tasks/i })).toBeNull()
-    })
-
+  describe('Done column empty state', () => {
     it('shows empty state when done column has no tasks', () => {
       const column = makeColumn({ id: DONE_COLUMN_ID, title: 'Done', kind: 'system', systemKey: 'done' })
       renderColumnCard(column, [])

@@ -1,6 +1,6 @@
 import express from 'express'
 import { Router } from 'express'
-import type { Task } from '../../types.js'
+import type { Task } from '../types.js'
 
 const router = Router()
 
@@ -11,6 +11,7 @@ let clientIdCounter = 0
 export type BroadcastSummary =
   | { source: 'home_assistant'; created: string[]; skipped: string[] }
   | { source: 'tab'; created: Task[]; updated: Task[]; deleted: string[] }
+  | { source: 'psyduck'; created: Task[]; updated: Task[]; deleted: string[] }
   | null
 
 export function broadcast(sourceTabId?: string, summary?: BroadcastSummary): void {
@@ -30,6 +31,26 @@ export function broadcast(sourceTabId?: string, summary?: BroadcastSummary): voi
   }
 
   // Remove disconnected clients after iteration completes
+  for (const dead of deadClients) {
+    clients.delete(dead)
+  }
+}
+
+export function broadcastSchemaUpdated(): void {
+  const payload = JSON.stringify({ type: 'schema_updated' })
+  const message = `data: ${payload}\n\n`
+  console.log(`[SSE] Broadcasting schema_updated to ${clients.size} client(s)`)
+
+  const deadClients: express.Response[] = []
+
+  for (const [client] of clients) {
+    try {
+      client.write(message)
+    } catch {
+      deadClients.push(client)
+    }
+  }
+
   for (const dead of deadClients) {
     clients.delete(dead)
   }
