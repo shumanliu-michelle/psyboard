@@ -1,3 +1,8 @@
+---
+name: psyboard
+description: Task management via local Kanban board API — create, update, move, complete tasks and query by field operators.
+---
+
 # psyboard Skill
 
 The psyboard skill provides task management capabilities via a local Kanban board API.
