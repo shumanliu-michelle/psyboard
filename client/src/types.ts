@@ -90,4 +90,5 @@ export type UpdateTaskInput = {
 export type BroadcastSummary =
   | { source: 'home_assistant'; created: string[]; skipped: string[] }
   | { source: 'tab'; created: Task[]; updated: Task[]; deleted: string[] }
+  | { source: 'psyduck'; created: Task[]; updated: Task[]; deleted: string[] }
   | null

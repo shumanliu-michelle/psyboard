@@ -10,12 +10,14 @@ interface ToastProps {
 function getIcon(summary: BroadcastSummary): string {
   if (summary === null) return '🔄'
   if (summary.source === 'home_assistant') return '🏠'
+  if (summary.source === 'psyduck') return '🐥'
   return '🔄'
 }
 
 function getLabel(summary: BroadcastSummary): string {
   if (summary === null) return 'Board updated in another tab'
   if (summary.source === 'home_assistant') return 'Home Assistant'
+  if (summary.source === 'psyduck') return 'psyduck'
   return 'Board updated'
 }
 
@@ -25,7 +27,7 @@ function getCreatedCount(summary: BroadcastSummary): number {
 }
 
 function getUpdatedCount(summary: BroadcastSummary): number {
-  if (summary === null || summary.source !== 'tab') return 0
+  if (summary === null || (summary.source !== 'tab' && summary.source !== 'psyduck')) return 0
   return summary.updated.length
 }
 
@@ -35,12 +37,12 @@ function getSkippedCount(summary: BroadcastSummary): number {
 }
 
 function getDoneTasks(summary: BroadcastSummary): Task[] {
-  if (summary === null || summary.source !== 'tab') return []
+  if (summary === null || (summary.source !== 'tab' && summary.source !== 'psyduck')) return []
   return summary.updated.filter(t => t.columnId === 'col-done')
 }
 
 function getOtherUpdatedTasks(summary: BroadcastSummary): Task[] {
-  if (summary === null || summary.source !== 'tab') return []
+  if (summary === null || (summary.source !== 'tab' && summary.source !== 'psyduck')) return []
   return summary.updated.filter(t => t.columnId !== 'col-done')
 }
 
@@ -66,7 +68,7 @@ export function Toast({ summary, visible, onDismiss }: ToastProps) {
   const skippedCount = getSkippedCount(summary)
   const doneTasks = getDoneTasks(summary)
   const otherUpdatedTasks = getOtherUpdatedTasks(summary)
-  const deletedTasks = summary !== null && summary.source === 'tab' ? summary.deleted : []
+  const deletedTasks = summary !== null && (summary.source === 'tab' || summary.source === 'psyduck') ? summary.deleted : []
 
   return (
     <div className="toast" role="status" aria-live="polite" key={animKey}>
